@@ -105,6 +105,7 @@ public class ClientHandler extends Thread{
                 return;
             } catch (IOException e) {
                 System.out.println("IO:" + e);
+                return;
             }
         }
     }
