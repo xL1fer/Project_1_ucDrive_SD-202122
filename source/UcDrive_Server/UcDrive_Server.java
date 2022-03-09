@@ -53,13 +53,14 @@ public class UcDrive_Server {
         System.out.println("> Do you want to manage \"user.data\" file?");
         String opt = sc.nextLine();
 
+        // TODO: make a thread responsible to handling the user data while the other is already running the server
         if(opt.equals("yes") || opt.equals("y"))
             manageUserData();
 
         saveUsers();
         
         try (ServerSocket listenSocket = new ServerSocket(serverPort)) {
-            System.out.println(":: Listening on port 6000 ::");
+            System.out.println("\n:: Listening on port 6000 ::");
             System.out.println("LISTEN SOCKET=" + listenSocket);
             while (true) {
                 Socket clientSocket = listenSocket.accept(); // BLOQUEANTE

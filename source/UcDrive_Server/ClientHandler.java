@@ -53,7 +53,7 @@ public class ClientHandler extends Thread{
             try {
                 ClientAuth auth = (ClientAuth) ois.readObject();
                 for(User u : UcDrive_Server.users){
-                    System.out.println(u);
+                    //System.out.println(u);
                     if(u.compareAuth(auth)){
                         System.out.println("> Client " + auth.getUsername() + " authenticated.");
                         this.user = u;

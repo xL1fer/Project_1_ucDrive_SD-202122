@@ -51,8 +51,15 @@ public class Client {
         String serverPort = sc.nextLine();
         if (serverPort.equals("")) serverPort = "6000";
 
+        // using regex to determine wether or not the serverPort string is an Integer
+        if (!serverPort.matches("-?\\d+")) {
+            System.out.println("> Server Port must be an integer.");
+            sc.close();
+            return;
+        }
+
         try (Socket s = new Socket(serverIp, Integer.parseInt(serverPort))) {
-            System.out.println(":: Successfully connected to server ::");
+            System.out.println("\n:: Successfully connected to server ::");
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
