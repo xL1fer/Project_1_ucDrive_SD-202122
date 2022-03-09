@@ -44,8 +44,7 @@ public class ClientHandler extends Thread{
     }
 
     public void run(){
-        String answer;
-        
+
         // authentication loop
         outer:
         while (true) {
@@ -75,7 +74,7 @@ public class ClientHandler extends Thread{
                 return;
             }
         }
-
+        File file;
         String opt[];
         // commands loop
         while (true) {
@@ -104,7 +103,7 @@ public class ClientHandler extends Thread{
                         break;
                     // remove directory
                     case "rm":
-                        File file = new File(user.getCurPath() + "\\" + joinString(opt));
+                        file = new File(user.getCurPath() + "\\" + joinString(opt));
                         // directory not found
                         if(file.exists() == false){
                             oos.writeUTF("> Directory not found.");
@@ -125,6 +124,23 @@ public class ClientHandler extends Thread{
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         return;
                     // exit
+                    case "dw":
+                        file = new File(user.getCurPath() + "\\" + joinString(opt));
+                        // directory not found
+                        if(file.exists() == false){
+                            oos.writeUTF("> Directory not found.");
+                            oos.flush();
+                            break;
+                        }
+                        oos.writeUTF("");
+                        oos.flush();
+
+                        int port = UcDrive_Server.getUnusedPort();
+                        oos.writeInt(port);
+                        oos.flush();
+
+                        UploadHandler uHandler = new UploadHandler(user.getCurPath() + "\\" + joinString(opt), port);
+                        break;
                     case "exit":
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         return;

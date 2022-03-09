@@ -30,6 +30,7 @@ public class Client {
     static ObjectOutputStream oos;
     static boolean onServerDirectory;
     static String localDirectory;
+    static DownloadHandler dHandler;
 	public static void main(String args[]) {
         clearTerminal();
 
@@ -234,6 +235,44 @@ public class Client {
                         System.out.println(response);
                         return;
                     // clear console
+                    case "dw":
+                        if(!onServerDirectory){
+                            System.out.println("> Cannot download from local directory.");
+                            oos.writeUTF("error");
+                            oos.flush();
+                            break;
+                        }
+                        if (opt.length < 2) {
+                            System.out.println("> Too few arguments.");
+                            oos.writeUTF("error");
+                            oos.flush();
+                            break;
+                        }
+
+                        oos.writeUTF("dw " + joinString(opt));
+                        oos.flush();
+                        
+                        //check if server found the file
+                        String res = ois.readUTF();
+                        if(!res.equals("")){
+                            System.out.println(res);
+                            oos.writeUTF("dir");
+                            oos.flush();
+                            break;
+                        }
+
+                        //server found the file and is now sending the port
+                        int port = ois.readInt();
+                        if(port == 0){
+                            System.out.println("> Error: Cannot download file.");
+                            oos.writeUTF("error");
+                            oos.flush();
+                            break;
+                        }
+                        dHandler = new DownloadHandler(serverIp, port, localDirectory);
+                        System.out.println("> Download started.");
+
+                        break;
                     case "clear":
                         clearTerminal();
                         oos.writeUTF("dir");
