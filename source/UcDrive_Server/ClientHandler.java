@@ -88,14 +88,26 @@ public class ClientHandler extends Thread{
                 opt = ois.readUTF().split(" ");
 
                 switch(opt[0]){
+                    // list directory
                     case "ls":
                         oos.writeUTF(getFileList());
                         oos.flush();
                         break;
+                    // change directory
                     case "cd":
                         oos.writeUTF(changeDirectory(opt[1]));
                         oos.flush();
                         break;
+                    // change password
+                    case "pw":
+                        user.getClientData().setPassword(opt[1]);
+                        oos.writeUTF("> Password changed.");
+                        oos.flush();
+                        break;
+                    // exit
+                    case "exit":
+                        System.out.println("> Client " + user.getClientData().getUsername() + " left.");
+                        return;
                     default:
                         break;
                 }
