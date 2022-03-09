@@ -64,6 +64,8 @@ public class Client {
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
+            
+            // TODO: make so that once user can only be logged in one device at a time?
             // authentication loop
             while (true) {
                 // READ STRING FROM KEYBOARD
@@ -80,7 +82,7 @@ public class Client {
 
                 //server answers with boolean saying if client is authenticated or not
                 if(ois.readBoolean()){
-                    System.out.println("> Logged in as: " + username);
+                    System.out.println("> Logged in as: " + username + "\n");
                     break;
                 }
                 else{
@@ -140,6 +142,7 @@ public class Client {
                             System.out.println(changeDirectory(joinString(opt)));
                         }
                         break;
+                    // make directory
                     case "mkdir":
                         if(onServerDirectory){
                             if (opt.length < 2) {
@@ -148,7 +151,8 @@ public class Client {
                                 oos.flush();
                                 break;
                             }
-                            oos.writeUTF("cd " + opt[1]);
+                            // the desired directory can be a folder named "new folder", so we need to join
+                            oos.writeUTF("mkdir " + joinString(opt));
                             oos.flush();
                             response = ois.readUTF();
                             if(!response.equals(""))
@@ -159,7 +163,7 @@ public class Client {
                                 System.out.println("> Too few arguments.");
                                 break;
                             }
-                            System.out.println(changeDirectory(joinString(opt)));
+                            System.out.println(createDirectory(joinString(opt)));
                         }
                         break;
                     // change password
@@ -175,15 +179,18 @@ public class Client {
                         response = ois.readUTF();
                         System.out.println(response);
                         return;
+                    // clear console
                     case "clear":
                         clearTerminal();
                         oos.writeUTF("dir");
                         oos.flush();
                         break;
+                    // exit program
                     case "exit":
                         oos.writeUTF("exit");
                         oos.flush();
                         return;
+                    // change between local and server directories
                     case "ch":
                         if(onServerDirectory == false){
                             oos.writeUTF("dir");
@@ -191,11 +198,11 @@ public class Client {
                         }
                         onServerDirectory = !onServerDirectory;
                         break;
-                    //TODO: make program recognize \n and not print command not found when \n is entered
-                    /*case "\r\n":
+                    // ignore empty input
+                    case "":
                         oos.writeUTF("dir");
                         oos.flush();
-                        break;*/
+                        break;
                     default:
                         System.out.println("> Command not found.");
                         oos.writeUTF("error");
@@ -267,6 +274,19 @@ public class Client {
         }
 
         return "> Invalid path.";
+    }
+
+    private static String createDirectory(String dirName){
+        File f = new File(localDirectory + "\\" + dirName);
+        //System.out.println("Dir: " + f);
+        if(f.exists() == false){
+            f.mkdirs();
+            // change user to created directory
+            changeDirectory(dirName);
+            return "";
+            //return "> Directory \"" + dirName + "\" created.";
+        }
+        return "> Directory already exists.";
     }
     
     //this will remove the first index!!!!

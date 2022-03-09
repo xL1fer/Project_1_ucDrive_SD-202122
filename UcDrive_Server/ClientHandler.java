@@ -96,6 +96,11 @@ public class ClientHandler extends Thread{
                         oos.writeUTF(changeDirectory(joinString(opt)));
                         oos.flush();
                         break;
+                    // make directory
+                    case "mkdir":
+                        oos.writeUTF(createDirectory(joinString(opt)));
+                        oos.flush();
+                        break;
                     // change password
                     case "pw":
                         // TODO: when changing password we need to save it on the file
@@ -134,7 +139,6 @@ public class ClientHandler extends Thread{
     }
 
     private String changeDirectory(String path){
-
         if(path.equals("..")){
             String directoryList[] = user.getCurPath().split("\\\\");
 
@@ -175,6 +179,19 @@ public class ClientHandler extends Thread{
         }
 
         return "> Invalid path.";
+    }
+
+    private String createDirectory(String dirName){
+        File f = new File(user.getCurPath() + "\\" + dirName);
+        //System.out.println("Dir: " + f);
+        if(f.exists() == false){
+            f.mkdirs();
+            // change user to created directory
+            changeDirectory(dirName);
+            return "";
+            //return "> Directory \"" + dirName + "\" created.";
+        }
+        return "> Directory already exists.";
     }
 
     //this will remove the first index!!!!
