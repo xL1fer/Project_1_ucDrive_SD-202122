@@ -88,8 +88,6 @@ public class Client {
                 }
             }
 
-            clearTerminal();
-
             String dir;
             String[] opt;
             String response;
@@ -103,7 +101,6 @@ public class Client {
                 else{
                     System.out.print("(Local) " + localDirectory + ">");
                 }
-
 
                 opt = sc.nextLine().split(" ");
 
@@ -194,6 +191,11 @@ public class Client {
                         }
                         onServerDirectory = !onServerDirectory;
                         break;
+                    //TODO: make program recognize \n and not print command not found when \n is entered
+                    /*case "\r\n":
+                        oos.writeUTF("dir");
+                        oos.flush();
+                        break;*/
                     default:
                         System.out.println("> Command not found.");
                         oos.writeUTF("error");
