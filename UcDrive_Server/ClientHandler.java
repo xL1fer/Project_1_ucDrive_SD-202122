@@ -16,6 +16,7 @@
  */
 
 import java.net.*;
+import java.nio.file.Files;
 import java.io.*;
 
 /**
@@ -99,6 +100,20 @@ public class ClientHandler extends Thread{
                     // make directory
                     case "mkdir":
                         oos.writeUTF(createDirectory(joinString(opt)));
+                        oos.flush();
+                        break;
+                    // remove directory
+                    case "rm":
+                        File file = new File(user.getCurPath() + "\\" + joinString(opt));
+                        // directory not found
+                        if(file.exists() == false){
+                            oos.writeUTF("> Directory not found.");
+                            oos.flush();
+                            break;
+                        }
+                        
+                        deleteDir(file);
+                        oos.writeUTF("> Directory \"" + joinString(opt) + "\" deleted.");
                         oos.flush();
                         break;
                     // change password
@@ -192,6 +207,20 @@ public class ClientHandler extends Thread{
             //return "> Directory \"" + dirName + "\" created.";
         }
         return "> Directory already exists.";
+    }
+
+    private void deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                if (! Files.isSymbolicLink(f.toPath())) {
+                    deleteDir(f);
+                }
+            }
+        }
+        if (!file.delete()){
+            System.out.println("> Could not delete file \"" + file + "\".");
+        }
     }
 
     //this will remove the first index!!!!

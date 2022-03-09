@@ -16,6 +16,7 @@
  */
 
 import java.net.*;
+import java.nio.file.Files;
 import java.util.Scanner;
 import java.io.*;
 
@@ -166,6 +167,59 @@ public class Client {
                             System.out.println(createDirectory(joinString(opt)));
                         }
                         break;
+                    // remove directory
+                    case "rm":
+                        if(onServerDirectory){
+                            if (opt.length < 2) {
+                                System.out.println("> Too few arguments.");
+                                oos.writeUTF("error");
+                                oos.flush();
+                                break;
+                            }
+
+                            System.out.print("> Are you sure you want to try to remove \"" + joinString(opt) + "\" directory? ");
+                            String ans = sc.nextLine();
+                            // abort rm
+                            if(!ans.equals("yes") && !ans.equals("y")){
+                                oos.writeUTF("dir");
+                                oos.flush();
+                                break;
+                            }
+
+                            // the desired directory can be a folder named "new folder", so we need to join
+                            oos.writeUTF("rm " + joinString(opt));
+                            oos.flush();
+                            response = ois.readUTF();
+                            if(!response.equals(""))
+                                System.out.println(response);
+                        }
+                        else{
+                            if(opt.length < 2){
+                                System.out.println("> Too few arguments.");
+                                break;
+                            }
+
+                            System.out.print("> Are you sure you want to try to remove \"" + joinString(opt) + "\" directory? ");
+                            String ans = sc.nextLine();
+                            // abort rm
+                            if(!ans.equals("yes") && !ans.equals("y")){
+                                oos.writeUTF("dir");
+                                oos.flush();
+                                break;
+                            }
+
+                            // the desired directory can be a folder named "new folder", so we need to join
+                            File file = new File(localDirectory + "\\" + joinString(opt));
+                            // directory not found
+                            if(file.exists() == false){
+                                System.out.println("> Directory not found.");
+                                break;
+                            }
+                            
+                            deleteDir(file);
+                            System.out.println("> Directory \"" + joinString(opt) + "\" deleted.");
+                        }
+                        break;
                     // change password
                     case "pw":
                         if (opt.length < 2) {
@@ -292,8 +346,22 @@ public class Client {
         }
         return "> Directory already exists.";
     }
+
+    private static void deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                if (! Files.isSymbolicLink(f.toPath())) {
+                    deleteDir(f);
+                }
+            }
+        }
+        if (!file.delete()){
+            System.out.println("> Could not delete file \"" + file + "\".");
+        }
+    }
     
-    //this will remove the first index!!!!
+    // this will remove the first index!!!!
     private static String joinString(String array[]){
         String str = "";
         for(int i = 1; i < array.length; i++){
