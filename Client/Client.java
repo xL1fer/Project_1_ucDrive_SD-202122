@@ -64,7 +64,7 @@ public class Client {
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
-            
+
             // TODO: make so that once user can only be logged in one device at a time?
             // authentication loop
             while (true) {
@@ -200,13 +200,17 @@ public class Client {
                         break;
                     // ignore empty input
                     case "":
-                        oos.writeUTF("dir");
-                        oos.flush();
+                        if (onServerDirectory){
+                            oos.writeUTF("dir");
+                            oos.flush();
+                        }
                         break;
                     default:
                         System.out.println("> Command not found.");
-                        oos.writeUTF("error");
-                        oos.flush();
+                        if (onServerDirectory){
+                            oos.writeUTF("error");
+                            oos.flush();
+                        }
                         break;
                 }
 
