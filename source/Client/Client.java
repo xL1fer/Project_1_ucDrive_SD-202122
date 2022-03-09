@@ -124,7 +124,6 @@ public class Client {
                         break;
                     // change password
                     case "pw":
-                        // TODO: redirect client to login
                         if (opt.length < 2) {
                             System.out.println("> Too few arguments.");
                             oos.writeUTF("error");
@@ -135,13 +134,18 @@ public class Client {
                         oos.flush();
                         response = ois.readUTF();
                         System.out.println(response);
+                        return;
+                    case "clear":
+                        clearTerminal();
+                        oos.writeUTF("dir");
+                        oos.flush();
                         break;
-                    // quit
                     case "exit":
                         oos.writeUTF("exit");
                         oos.flush();
                         return;
                     default:
+                        System.out.println("> Command not found.");
                         oos.writeUTF("error");
                         oos.flush();
                         break;

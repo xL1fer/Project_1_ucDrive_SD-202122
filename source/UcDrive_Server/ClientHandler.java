@@ -17,6 +17,9 @@
 
 package source.UcDrive_Server;
 import java.net.*;
+
+import javax.xml.namespace.QName;
+
 import java.io.*;
 import source.ClientAuth;
 
@@ -103,7 +106,8 @@ public class ClientHandler extends Thread{
                         user.getClientData().setPassword(opt[1]);
                         oos.writeUTF("> Password changed.");
                         oos.flush();
-                        break;
+                        System.out.println("> Client " + user.getClientData().getUsername() + " left.");
+                        return;
                     // exit
                     case "exit":
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
@@ -137,6 +141,12 @@ public class ClientHandler extends Thread{
 
         if(path.equals("..")){
             String directoryList[] = user.getCurPath().split("/");
+
+            //restrict to home path
+            if(directoryList.length < 3){
+                return "> Cannot leave home folder.";
+            }
+
             String newPath = "";
             for(int i = 0; i < directoryList.length - 1; i++){
                 newPath += directoryList[i];
