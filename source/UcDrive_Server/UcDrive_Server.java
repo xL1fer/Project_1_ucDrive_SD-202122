@@ -102,6 +102,7 @@ public class UcDrive_Server {
                     break;
                 // remove user
                 case "remove":
+                    // TODO: delete user directory aswell
                     if (words.length < 2) {
                         System.out.println("Too few arguments.");
                         break;
