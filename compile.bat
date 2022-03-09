@@ -1,4 +1,8 @@
-javac source/UcDrive_Server/UcDrive_Server.java
-javac source/Client/Client.java
+cd UcDrive_Server
+javac UcDrive_Server.java
+cd ..
+cd Client
+javac Client.java
+cd ..
 
 pause

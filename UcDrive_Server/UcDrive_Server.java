@@ -15,12 +15,10 @@
  *  "ucDrive Project"
  */
 
-package source.UcDrive_Server;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.*;
-import source.ClientAuth;
 
 // suppress unchecked casts warning
 @SuppressWarnings("unchecked")

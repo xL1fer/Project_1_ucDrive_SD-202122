@@ -1,1 +1,3 @@
-java source/UcDrive_Server/UcDrive_Server
+cd UcDrive_Server
+java UcDrive_Server
+cd ..

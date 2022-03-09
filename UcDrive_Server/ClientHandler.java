@@ -15,13 +15,8 @@
  *  "ucDrive Project"
  */
 
-package source.UcDrive_Server;
 import java.net.*;
-
-import javax.xml.namespace.QName;
-
 import java.io.*;
-import source.ClientAuth;
 
 /**
  * Client handler server-sided class

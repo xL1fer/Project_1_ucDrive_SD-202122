@@ -1,5 +1,3 @@
-package source;
-
 import java.io.Serializable;
 
 public class ClientAuth implements Serializable{

@@ -1,1 +1,3 @@
-java source/Client/Client
+cd Client
+java Client
+cd ..

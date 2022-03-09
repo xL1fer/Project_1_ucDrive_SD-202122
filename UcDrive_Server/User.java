@@ -1,7 +1,5 @@
-package source.UcDrive_Server;
 import java.io.File;
 import java.io.Serializable;
-import source.ClientAuth;
 
 public class User implements Serializable{
     private ClientAuth clientData;
