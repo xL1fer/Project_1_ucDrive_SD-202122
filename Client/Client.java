@@ -24,7 +24,11 @@ import java.io.*;
  * the client application
  */
 public class Client {
-
+    static Scanner sc;
+    static ObjectInputStream ois;
+    static ObjectOutputStream oos;
+    static boolean onServerDirectory;
+    static String localDirectory;
 	public static void main(String args[]) {
         clearTerminal();
 
@@ -35,12 +39,11 @@ public class Client {
         System.out.println("|____/  \\___  >_______  /__|  |__| \\_/  \\___  >");
         System.out.println("            \\/        \\/                    \\/");
         System.out.println("\n ucDrive v0.01\n Client Application\n\n====================\n");
-        
-        ObjectInputStream ois;
-        ObjectOutputStream oos;
 
-        Scanner sc = new Scanner(System.in);
-        
+        sc = new Scanner(System.in);
+        onServerDirectory = true;
+        localDirectory = System.getProperty("user.dir");
+
         System.out.print("> Server IP [localhost]: ");
         String serverIp = sc.nextLine();
         if (serverIp.equals("")) serverIp = "localhost";
@@ -92,33 +95,75 @@ public class Client {
             String response;
             // commands loop
             while (true) {
-                dir = ois.readUTF();
                 
-                System.out.print(dir + ">");
+                if(onServerDirectory){
+                    dir = ois.readUTF();
+                    System.out.print("(Server) " + dir + ">");
+                }
+                else{
+                    System.out.print("(Local) " + localDirectory + ">");
+                }
+
 
                 opt = sc.nextLine().split(" ");
 
                 switch(opt[0]){
                     // list directory
                     case "ls":
-                        oos.writeUTF("ls");
-                        oos.flush();
-                        System.out.println(ois.readUTF());
+                        if(onServerDirectory){
+                            oos.writeUTF("ls");
+                            oos.flush();
+                            System.out.println(ois.readUTF());
+                        }
+                        else{
+                            System.out.println(getFileList());
+                        }
                         break;
                     // change directory
                     case "cd":
-                        // TODO: restrict to home folder
-                        if (opt.length < 2) {
-                            System.out.println("> Too few arguments.");
-                            oos.writeUTF("error");
+                        if(onServerDirectory){
+                            if (opt.length < 2) {
+                                System.out.println("> Too few arguments.");
+                                oos.writeUTF("error");
+                                oos.flush();
+                                break;
+                            }
+                            //joinString will join the string but not used the first index
+                            oos.writeUTF("cd " + joinString(opt));
                             oos.flush();
-                            break;
+                            response = ois.readUTF();
+                            if(!response.equals(""))
+                                System.out.println(response);
                         }
-                        oos.writeUTF("cd " + opt[1]);
-                        oos.flush();
-                        response = ois.readUTF();
-                        if(!response.equals(""))
-                            System.out.println(response);
+                        else{
+                            if(opt.length < 2){
+                                System.out.println("> Too few arguments.");
+                                break;
+                            }
+                            System.out.println(changeDirectory(joinString(opt)));
+                        }
+                        break;
+                    case "mkdir":
+                        if(onServerDirectory){
+                            if (opt.length < 2) {
+                                System.out.println("> Too few arguments.");
+                                oos.writeUTF("error");
+                                oos.flush();
+                                break;
+                            }
+                            oos.writeUTF("cd " + opt[1]);
+                            oos.flush();
+                            response = ois.readUTF();
+                            if(!response.equals(""))
+                                System.out.println(response);
+                        }
+                        else{
+                            if(opt.length < 2){
+                                System.out.println("> Too few arguments.");
+                                break;
+                            }
+                            System.out.println(changeDirectory(joinString(opt)));
+                        }
                         break;
                     // change password
                     case "pw":
@@ -142,6 +187,13 @@ public class Client {
                         oos.writeUTF("exit");
                         oos.flush();
                         return;
+                    case "ch":
+                        if(onServerDirectory == false){
+                            oos.writeUTF("dir");
+                            oos.flush();
+                        }
+                        onServerDirectory = !onServerDirectory;
+                        break;
                     default:
                         System.out.println("> Command not found.");
                         oos.writeUTF("error");
@@ -156,6 +208,74 @@ public class Client {
         }
 
         sc.close();
+    }
+
+    private static String getFileList(){
+        File f = new File(localDirectory);
+        String files[] = f.list();
+        String ls = "";
+        for(String s : files){
+            ls += s;
+            ls += "  ";
+        }
+        return ls;
+    }
+
+    private static String changeDirectory(String path){
+
+        if(path.equals("..")){
+            String directoryList[] = localDirectory.split("\\\\");
+
+            //restrict to home path
+            if(directoryList.length < 3){
+                return "> Cannot leave home folder.";
+            }
+
+            //create new path without hte last "/" -> "Users/asd" to "Users"
+            String newPath = "";
+            for(int i = 0; i < directoryList.length - 1; i++){
+                newPath += directoryList[i];
+                if(i != directoryList.length - 2)
+                    newPath += "\\";
+            }
+
+            localDirectory = newPath;
+            return "";
+        }
+
+        File f = new File(localDirectory);
+        File files[] = f.listFiles();
+
+        //check if directory exists
+        for(File file : files){
+            //file.tostring will return a path like "Users\alex\asd", we want only "asd"
+            String fileNames[] = file.toString().split("\\\\");
+            String fileName = fileNames[fileNames.length-1];
+
+            //checks if the path is directory and if the name equals the desired path
+            if(fileName.equals(path)){
+                if(file.isDirectory()){
+                    localDirectory = localDirectory + "\\" + path;
+                    return "";
+                }
+                //found file with that name
+                else
+                    return "> Specified path is not a directory.";
+            }
+        }
+
+        return "> Invalid path.";
+    }
+    
+    //this will remove the first index!!!!
+    private static String joinString(String array[]){
+        String str = "";
+        for(int i = 1; i < array.length; i++){
+            str += array[i];
+            if(i != array.length - 1)
+                str += " ";
+        }
+        return str;
     }
 
     private static void clearTerminal(){

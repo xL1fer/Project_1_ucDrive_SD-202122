@@ -7,7 +7,7 @@ public class User implements Serializable{
 
     public User(ClientAuth auth){
         clientData = auth;
-        curPath = "Users/" + clientData.getUsername();
+        curPath = "Users\\" + clientData.getUsername();
         createDirectory();
     }
 
@@ -18,7 +18,7 @@ public class User implements Serializable{
     }
 
     public void createDirectory(){
-        File f = new File("Users/"+ clientData.getUsername());
+        File f = new File("Users\\"+ clientData.getUsername());
         if(f.exists() == false){
             f.mkdirs();
         }

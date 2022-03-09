@@ -82,7 +82,7 @@ public class ClientHandler extends Thread{
                 //send current directory to client
                 oos.writeUTF(user.getClientPath());
                 oos.flush();
-                
+
                 opt = ois.readUTF().split(" ");
 
                 switch(opt[0]){
@@ -93,11 +93,12 @@ public class ClientHandler extends Thread{
                         break;
                     // change directory
                     case "cd":
-                        oos.writeUTF(changeDirectory(opt[1]));
+                        oos.writeUTF(changeDirectory(joinString(opt)));
                         oos.flush();
                         break;
                     // change password
                     case "pw":
+                        // TODO: when changing password we need to save it on the file
                         user.getClientData().setPassword(opt[1]);
                         oos.writeUTF("> Password changed.");
                         oos.flush();
@@ -135,7 +136,7 @@ public class ClientHandler extends Thread{
     private String changeDirectory(String path){
 
         if(path.equals("..")){
-            String directoryList[] = user.getCurPath().split("/");
+            String directoryList[] = user.getCurPath().split("\\\\");
 
             //restrict to home path
             if(directoryList.length < 3){
@@ -146,7 +147,7 @@ public class ClientHandler extends Thread{
             for(int i = 0; i < directoryList.length - 1; i++){
                 newPath += directoryList[i];
                 if(i != directoryList.length - 2)
-                    newPath += "/";
+                    newPath += "\\";
             }
             user.setCurPath(newPath);
             return "";
@@ -164,7 +165,7 @@ public class ClientHandler extends Thread{
             //checks if the path is directory and if the name equals the desired path
             if(fileName.equals(path)){
                 if(file.isDirectory()){
-                    user.setCurPath(user.getCurPath() + "/" + path);
+                    user.setCurPath(user.getCurPath() + "\\" + path);
                     return "";
                 }
                 //found file with that name
@@ -174,6 +175,17 @@ public class ClientHandler extends Thread{
         }
 
         return "> Invalid path.";
+    }
+
+    //this will remove the first index!!!!
+    private static String joinString(String array[]){
+        String str = "";
+        for(int i = 1; i < array.length; i++){
+            str += array[i];
+            if(i != array.length - 1)
+                str += " ";
+        }
+        return str;
     }
 
 }
