@@ -42,7 +42,7 @@ public class UcDrive_Server {
         System.out.println("|  |  /\\  \\___ |    `   \\  | \\/  |\\   /\\  ___/ ");
         System.out.println("|____/  \\___  >_______  /__|  |__| \\_/  \\___  >");
         System.out.println("            \\/        \\/                    \\/");
-        System.out.println("\n ucDrive v0.01\n Server Application\n\n===================\n");
+        System.out.println("\n ucDrive v0.01\n Server Application\n\n====================\n");
 
         Scanner sc = new Scanner(System.in);
 

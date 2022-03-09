@@ -36,7 +36,7 @@ public class Client {
         System.out.println("|  |  /\\  \\___ |    `   \\  | \\/  |\\   /\\  ___/ ");
         System.out.println("|____/  \\___  >_______  /__|  |__| \\_/  \\___  >");
         System.out.println("            \\/        \\/                    \\/");
-        System.out.println("\n ucDrive v0.01\n Client Application\n\n===================\n");
+        System.out.println("\n ucDrive v0.01\n Client Application\n\n====================\n");
         
         ObjectInputStream ois;
         ObjectOutputStream oos;
@@ -102,6 +102,7 @@ public class Client {
                         break;
                     // change directory
                     case "cd":
+                        // TODO: restrict to home folder
                         if (opt.length < 2) {
                             System.out.println("> Too few arguments.");
                             oos.writeUTF("error");
@@ -116,6 +117,7 @@ public class Client {
                         break;
                     // change password
                     case "pw":
+                        // TODO: redirect client to login
                         if (opt.length < 2) {
                             System.out.println("> Too few arguments.");
                             oos.writeUTF("error");
