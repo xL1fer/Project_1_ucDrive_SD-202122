@@ -274,7 +274,7 @@ public class Client {
                             break;
                         }
                         ClientDownloadHandler dHandler = new ClientDownloadHandler(serverIp, port, localDirectory);
-                        System.out.println("> Downloading...");
+                        System.out.println("> Downloading file from server...");
 
                         break;
                     case "up":
@@ -308,7 +308,7 @@ public class Client {
                         }
 
                         ClientUploadHandler uHandler = new ClientUploadHandler(serverIp, up_port, file.getPath());
-                        System.out.println("> Uploading...");
+                        System.out.println("> Uploading file to server...");
 
                         // we need to make a read in order to empty oos
                         ois.readUTF();
