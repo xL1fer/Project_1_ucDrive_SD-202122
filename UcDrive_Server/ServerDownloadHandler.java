@@ -33,14 +33,15 @@ public class ServerDownloadHandler extends Thread{
             clientSocket.close();
             listenSocket.close();
             fos.close();
-            return;
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
-            return;
         } catch (ClassNotFoundException e) {
             System.out.println("ClassNotFound:" + e.getMessage());
-            return;
         }
+
+        //System.out.println("Up removing unused port");
+        UcDrive_Server.ports.remove(Integer.valueOf(port));
+        return;
 
     }
 

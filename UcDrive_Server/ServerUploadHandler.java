@@ -36,11 +36,13 @@ public class ServerUploadHandler extends Thread{
             System.out.println("CLIENT DOWNLOAD SOCKET CLOSING");
             clientSocket.close();
             listenSocket.close();
-            return;
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
-            return;
         }
+
+        //System.out.println("Dl removing unused port");
+        UcDrive_Server.ports.remove(Integer.valueOf(port));
+        return;
 
     }
 
