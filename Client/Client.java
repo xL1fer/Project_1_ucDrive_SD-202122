@@ -95,6 +95,14 @@ public class Client {
             String dir;
             String[] opt;
             String response;
+
+
+            // NOTE: for further possible clarifications, we actually
+            // only need to send one flush per "switch case" to the server to get the "dir"
+            // response. Any other unecessary flush we try to do will lead to
+            // a overfilled "oos". This occurs because the server ALWAYS sends the "dir"
+            // response after finishing the "switch statement"
+
             // commands loop
             while (true) {
                 
@@ -129,7 +137,7 @@ public class Client {
                                 oos.flush();
                                 break;
                             }
-                            //joinString will join the string but not used the first index
+                            // joinString will join the whole string array but the first element
                             oos.writeUTF("cd " + joinString(opt));
                             oos.flush();
                             response = ois.readUTF();
@@ -204,8 +212,6 @@ public class Client {
                             String ans = sc.nextLine();
                             // abort rm
                             if(!ans.equals("yes") && !ans.equals("y")){
-                                oos.writeUTF("dir");
-                                oos.flush();
                                 break;
                             }
 
@@ -225,8 +231,11 @@ public class Client {
                     case "pw":
                         if (opt.length < 2) {
                             System.out.println("> Too few arguments.");
-                            oos.writeUTF("error");
-                            oos.flush();
+                            // we only need to flush the server when on its directory
+                            if (onServerDirectory) {
+                                oos.writeUTF("error");
+                                oos.flush();
+                            }
                             break;
                         }
                         oos.writeUTF("pw " + opt[1]);
@@ -238,8 +247,6 @@ public class Client {
                     case "dw":
                         if(!onServerDirectory){
                             System.out.println("> Cannot download from local directory.");
-                            oos.writeUTF("error");
-                            oos.flush();
                             break;
                         }
                         if (opt.length < 2) {
@@ -254,10 +261,8 @@ public class Client {
                         
                         //check if server found the file
                         String res = ois.readUTF();
-                        if(!res.equals("")){
+                        if(!res.equals("dw start")){
                             System.out.println(res);
-                            oos.writeUTF("dir");
-                            oos.flush();
                             break;
                         }
 
@@ -265,18 +270,19 @@ public class Client {
                         int port = ois.readInt();
                         if(port == 0){
                             System.out.println("> Error: Cannot download file.");
-                            oos.writeUTF("error");
-                            oos.flush();
                             break;
                         }
                         dHandler = new DownloadHandler(serverIp, port, localDirectory);
-                        System.out.println("> Download started.");
+                        System.out.println("> Downloading...");
 
                         break;
                     case "clear":
                         clearTerminal();
-                        oos.writeUTF("dir");
-                        oos.flush();
+                        // we only need to flush the server when on its directory
+                        if (onServerDirectory) {
+                            oos.writeUTF("dir");
+                            oos.flush();
+                        }
                         break;
                     // exit program
                     case "exit":

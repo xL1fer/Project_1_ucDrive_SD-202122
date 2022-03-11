@@ -132,7 +132,14 @@ public class ClientHandler extends Thread{
                             oos.flush();
                             break;
                         }
-                        oos.writeUTF("");
+                        // directory is not a file
+                        if(!file.isFile()){
+                            oos.writeUTF("> Directory is not a file.");
+                            oos.flush();
+                            break;
+                        }
+                        // start download message
+                        oos.writeUTF("dw start");
                         oos.flush();
 
                         int port = UcDrive_Server.getUnusedPort();

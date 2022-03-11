@@ -17,23 +17,26 @@ public class DownloadHandler extends Thread{
     public void run(){
         try (Socket s = new Socket(serverIp, serverPort)) {
             ois = new ObjectInputStream(s.getInputStream());
-
+            
+            //System.out.println("\n> Starting download.");
 
             String fileName = ois.readUTF();
             byte fileData[] = (byte[]) ois.readObject();
-
 
             File file = new File(localPath + "\\" + fileName);
             FileOutputStream fos = new FileOutputStream(file);
             fos.write(fileData);
 
-            System.out.println("Leaving");
+            //System.out.println("\n> Download finished.");
             fos.close();
             s.close();
+            return;
         } catch (IOException e) {
 			System.out.println("Listen:" + e.getMessage());
+            return;
 		} catch (ClassNotFoundException e) {
             System.out.println("ClassNotFound:" + e.getMessage());
+            return;
         }
 
     }

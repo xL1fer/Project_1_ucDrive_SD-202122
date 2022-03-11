@@ -36,8 +36,10 @@ public class UploadHandler extends Thread{
             System.out.println("CLIENT DOWNLOAD SOCKET CLOSING");
             clientSocket.close();
             listenSocket.close();
+            return;
         } catch (IOException e) {
-            System.out.println("Listen:" + e.getMessage());
+            System.out.println("IO:" + e.getMessage());
+            return;
         }
 
     }
