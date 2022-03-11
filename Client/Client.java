@@ -30,7 +30,8 @@ public class Client {
     static ObjectOutputStream oos;
     static boolean onServerDirectory;
     static String localDirectory;
-    static DownloadHandler dHandler;
+    //static ClientDownloadHandler dHandler;
+
 	public static void main(String args[]) {
         clearTerminal();
 
@@ -272,9 +273,46 @@ public class Client {
                             System.out.println("> Error: Cannot download file.");
                             break;
                         }
-                        dHandler = new DownloadHandler(serverIp, port, localDirectory);
+                        ClientDownloadHandler dHandler = new ClientDownloadHandler(serverIp, port, localDirectory);
                         System.out.println("> Downloading...");
 
+                        break;
+                    case "up":
+                        if(onServerDirectory){
+                            System.out.println("> Cannot upload from server directory.");
+                            oos.writeUTF("error");
+                            oos.flush();
+                            break;
+                        }
+                        File file = new File(localDirectory + "\\" + joinString(opt));
+                        // directory not found
+                        if(file.exists() == false){
+                            System.out.println("> Directory not found.");
+                            break;
+                        }
+                        // directory is not a file
+                        if(!file.isFile()){
+                            System.out.println("> Directory is not a file.");
+                            break;
+                        }
+
+                        // no need to send the upload file name
+                        oos.writeUTF("up "/* + joinString(opt)*/);
+                        oos.flush();
+
+                        //server is sending the port
+                        int up_port = ois.readInt();
+                        if(up_port == 0){
+                            System.out.println("> Error: Cannot download file.");
+                            break;
+                        }
+
+                        ClientUploadHandler uHandler = new ClientUploadHandler(serverIp, up_port, file.getPath());
+                        System.out.println("> Uploading...");
+
+                        // we need to make a read in order to empty oos
+                        ois.readUTF();
+                        
                         break;
                     case "clear":
                         clearTerminal();

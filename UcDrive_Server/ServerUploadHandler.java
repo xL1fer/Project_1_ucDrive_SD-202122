@@ -2,12 +2,12 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
 
-public class UploadHandler extends Thread{
+public class ServerUploadHandler extends Thread{
     private ObjectOutputStream oos;
     private String filePath;
     int port;
     
-    public UploadHandler(String filePath, int port){
+    public ServerUploadHandler(String filePath, int port){
         this.filePath = filePath;
         this.port = port;
         this.start();

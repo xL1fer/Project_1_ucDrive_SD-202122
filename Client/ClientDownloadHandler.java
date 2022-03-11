@@ -1,13 +1,13 @@
 import java.io.*;
 import java.net.*;
 
-public class DownloadHandler extends Thread{
+public class ClientDownloadHandler extends Thread{
     private String serverIp;
     private int serverPort;
     private ObjectInputStream ois;
     private String localPath;
 
-    public DownloadHandler(String serverIp, int serverPort, String localPath){
+    public ClientDownloadHandler(String serverIp, int serverPort, String localPath){
         this.serverIp = serverIp;
         this.serverPort = serverPort;
         this.localPath = localPath;

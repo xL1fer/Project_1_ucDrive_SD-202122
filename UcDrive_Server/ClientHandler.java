@@ -123,7 +123,7 @@ public class ClientHandler extends Thread{
                         oos.flush();
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         return;
-                    // exit
+                    // download files from server
                     case "dw":
                         file = new File(user.getCurPath() + "\\" + joinString(opt));
                         // directory not found
@@ -146,8 +146,17 @@ public class ClientHandler extends Thread{
                         oos.writeInt(port);
                         oos.flush();
 
-                        UploadHandler uHandler = new UploadHandler(user.getCurPath() + "\\" + joinString(opt), port);
+                        ServerUploadHandler uHandler = new ServerUploadHandler(user.getCurPath() + "\\" + joinString(opt), port);
                         break;
+                    // upload files to server
+                    case "up":
+                        int up_port = UcDrive_Server.getUnusedPort();
+                        oos.writeInt(up_port);
+                        oos.flush();
+
+                        ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath(), up_port);
+                        break;
+                    // exit
                     case "exit":
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         return;
