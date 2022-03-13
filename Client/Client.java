@@ -269,7 +269,7 @@ public class Client {
 
                         //server found the file and is now sending the port
                         int port = ois.readInt();
-                        if(port == 0){
+                        if(port == -1){
                             System.out.println("> Error: Cannot download file.");
                             break;
                         }
@@ -302,7 +302,7 @@ public class Client {
 
                         //server is sending the port
                         int up_port = ois.readInt();
-                        if(up_port == 0){
+                        if(up_port == -1){
                             System.out.println("> Error: Cannot download file.");
                             break;
                         }

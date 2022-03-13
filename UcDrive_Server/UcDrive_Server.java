@@ -29,9 +29,9 @@ import java.io.*;
  */
 public class UcDrive_Server {
     private static int serverPort = 6000;
-    private static int fileTransferPort = 7000;
     protected static ArrayList<User> users;     // protected - visible by same package
-    public static ArrayList<Integer> ports;
+    //private static int fileTransferPort = 7000;   // might not be used again
+    //public static ArrayList<Integer> ports;       // might not be used again
 
     public static void main(String args[]) {
         clearTerminal();
@@ -45,7 +45,7 @@ public class UcDrive_Server {
         System.out.println("\n ucDrive v0.01\n Server Application\n\n====================\n");
 
         Scanner sc = new Scanner(System.in);
-        ports = new ArrayList<>();
+        //ports = new ArrayList<>();
 
         users = new ArrayList<>();
 
@@ -196,7 +196,8 @@ public class UcDrive_Server {
         System.out.println("User " + words[1] + " not found.");
     }
 
-    public static int getUnusedPort(){
+    // not used anymore, OS now handles available ports
+    /*public static int getUnusedPort(){
         
         for(int p = serverPort + 1; p < 9000; p++){
             //if the port is used
@@ -207,5 +208,5 @@ public class UcDrive_Server {
             return p;
         }
         return 0;
-    }
+    }*/
 }

@@ -30,15 +30,14 @@ public class ClientDownloadHandler extends Thread{
             //System.out.println("\n> Download finished.");
             fos.close();
             s.close();
-            return;
+
         } catch (IOException e) {
 			System.out.println("Listen:" + e.getMessage());
-            return;
 		} catch (ClassNotFoundException e) {
             System.out.println("ClassNotFound:" + e.getMessage());
-            return;
         }
 
+        return;
     }
 
 

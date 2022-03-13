@@ -142,19 +142,21 @@ public class ClientHandler extends Thread{
                         oos.writeUTF("dw start");
                         oos.flush();
 
-                        int port = UcDrive_Server.getUnusedPort();
-                        oos.writeInt(port);
+                        ServerUploadHandler uHandler = new ServerUploadHandler(user.getCurPath() + "\\" + joinString(opt));
+                        
+                        int dl_port = uHandler.getPort();
+                        oos.writeInt(dl_port);
                         oos.flush();
-
-                        ServerUploadHandler uHandler = new ServerUploadHandler(user.getCurPath() + "\\" + joinString(opt), port);
+                        
                         break;
                     // upload files to server
                     case "up":
-                        int up_port = UcDrive_Server.getUnusedPort();
+                        ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath());
+                        
+                        int up_port = dHandler.getPort();
                         oos.writeInt(up_port);
                         oos.flush();
-
-                        ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath(), up_port);
+                        
                         break;
                     // exit
                     case "exit":

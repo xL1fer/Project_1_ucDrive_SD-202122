@@ -30,12 +30,11 @@ public class ClientUploadHandler extends Thread{
             oos.flush();
 
             s.close();
-            return;
         } catch (IOException e) {
 			System.out.println("Listen:" + e.getMessage());
-            return;
 		}
 
+        return;
     }
 
 

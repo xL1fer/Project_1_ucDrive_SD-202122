@@ -5,18 +5,23 @@ import java.nio.file.Files;
 public class ServerUploadHandler extends Thread{
     private ObjectOutputStream oos;
     private String filePath;
-    int port;
+    ServerSocket listenSocket;
     
-    public ServerUploadHandler(String filePath, int port){
+    public ServerUploadHandler(String filePath){
+        // port = 0 will force operating system to search for unused ports
+        try {
+            this.listenSocket = new ServerSocket(0);
+            this.start();
+        } catch (IOException e) {
+            System.out.println("IO:" + e.getMessage());
+        }
+
         this.filePath = filePath;
-        this.port = port;
-        this.start();
     }
 
     public void run(){
-
-        try (ServerSocket listenSocket = new ServerSocket(port)) {
-            System.out.println("\n:: Download Socket listening on port " + port + " ::");
+        try {
+            System.out.println("\n:: Download Socket listening on port " + getPort() + " ::");
             System.out.println("DOWNLOAD LISTEN SOCKET=" + listenSocket);
             Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
             System.out.println("CLIENT DOWNLOAD SOCKET (created at accept())="+clientSocket);
@@ -41,9 +46,12 @@ public class ServerUploadHandler extends Thread{
         }
 
         //System.out.println("Dl removing unused port");
-        UcDrive_Server.ports.remove(Integer.valueOf(port));
+        //UcDrive_Server.ports.remove(Integer.valueOf(port));
         return;
+    }
 
+    public int getPort() {
+        return this.listenSocket.getLocalPort();
     }
 
 }
