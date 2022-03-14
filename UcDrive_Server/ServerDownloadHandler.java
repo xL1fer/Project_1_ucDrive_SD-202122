@@ -2,9 +2,11 @@ import java.io.*;
 import java.net.*;
 
 public class ServerDownloadHandler extends Thread{
-    private ObjectInputStream ois;
+    private DataInputStream dis;
     private String filePath;
     ServerSocket listenSocket;
+    private int bufSize;
+    private byte buffer[];
     
     public ServerDownloadHandler(String filePath){
         // port = 0 will force operating system to search for unused ports
@@ -14,7 +16,8 @@ public class ServerDownloadHandler extends Thread{
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
         }
-
+        this.bufSize = 8192;
+        this.buffer = new byte[bufSize];
         this.filePath = filePath;
     }
 
@@ -22,27 +25,30 @@ public class ServerDownloadHandler extends Thread{
 
         try {
             System.out.println("\n:: Upload Socket listening on port " + getPort() + " ::");
-            System.out.println("UOLOAD LISTEN SOCKET=" + listenSocket);
+            System.out.println("UPLOAD LISTEN SOCKET=" + listenSocket);
             Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
             System.out.println("CLIENT UPLOAD SOCKET (created at accept())="+clientSocket);
             
-            ois = new ObjectInputStream(clientSocket.getInputStream());
+            dis = new DataInputStream(clientSocket.getInputStream());
 
-            String fileName = ois.readUTF();
-            byte fileData[] = (byte[]) ois.readObject();
+            String fileName = dis.readUTF();
 
-            File file = new File(filePath + "\\" + fileName);
-            FileOutputStream fos = new FileOutputStream(file);
-            fos.write(fileData);
+            File newFile = new File(filePath + "\\" + fileName);
+            FileOutputStream fos = new FileOutputStream(newFile);
+
+            int n;
+            while((n = dis.read(buffer)) > 0){
+                //System.out.println("Read " + n + "B.");
+                fos.write(buffer, 0, n);
+            }
             
             System.out.println("CLIENT UPLOAD SOCKET CLOSING");
+
+            fos.close();
             clientSocket.close();
             listenSocket.close();
-            fos.close();
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
-        } catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFound:" + e.getMessage());
         }
 
         //System.out.println("Up removing unused port");

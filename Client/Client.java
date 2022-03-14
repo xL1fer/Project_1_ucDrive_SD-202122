@@ -30,6 +30,7 @@ public class Client {
     static ObjectOutputStream oos;
     static boolean onServerDirectory;
     static String localDirectory;
+    static String serverDirectory;
     //static ClientDownloadHandler dHandler;
 
 	public static void main(String args[]) {
@@ -93,7 +94,6 @@ public class Client {
                 }
             }
 
-            String dir;
             String[] opt;
             String response;
 
@@ -108,8 +108,8 @@ public class Client {
             while (true) {
                 
                 if(onServerDirectory){
-                    dir = ois.readUTF();
-                    System.out.print("(Server) " + dir + ">");
+                    serverDirectory = ois.readUTF();
+                    System.out.print("(Server) " + serverDirectory + ">");
                 }
                 else{
                     System.out.print("(Local) " + localDirectory + ">");
@@ -274,7 +274,6 @@ public class Client {
                             break;
                         }
                         ClientDownloadHandler dHandler = new ClientDownloadHandler(serverIp, port, localDirectory);
-                        System.out.println("> Downloading file from server...");
 
                         break;
                     case "up":
@@ -308,7 +307,6 @@ public class Client {
                         }
 
                         ClientUploadHandler uHandler = new ClientUploadHandler(serverIp, up_port, file.getPath());
-                        System.out.println("> Uploading file to server...");
 
                         // we need to make a read in order to empty oos
                         ois.readUTF();

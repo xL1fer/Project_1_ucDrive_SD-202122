@@ -4,38 +4,55 @@ import java.net.*;
 public class ClientDownloadHandler extends Thread{
     private String serverIp;
     private int serverPort;
-    private ObjectInputStream ois;
+    private DataInputStream dis;
     private String localPath;
+    private int bufSize;
+    private byte buffer[];
 
     public ClientDownloadHandler(String serverIp, int serverPort, String localPath){
         this.serverIp = serverIp;
         this.serverPort = serverPort;
         this.localPath = localPath;
+        this.bufSize = 8192;
+        this.buffer = new byte[bufSize];
         this.start();
     }
 
     public void run(){
         try (Socket s = new Socket(serverIp, serverPort)) {
-            ois = new ObjectInputStream(s.getInputStream());
+            dis = new DataInputStream(s.getInputStream());
             
-            //System.out.println("\n> Starting download.");
+            System.out.println("\n> Downloading file from server...");
+            if (Client.onServerDirectory)
+                System.out.print("(Server) " + Client.serverDirectory + ">");
+            else
+                System.out.print("(Local) " + Client.localDirectory + ">");
 
-            String fileName = ois.readUTF();
-            byte fileData[] = (byte[]) ois.readObject();
+            String fileName = dis.readUTF();
 
             File file = new File(localPath + "\\" + fileName);
             FileOutputStream fos = new FileOutputStream(file);
-            fos.write(fileData);
+
+            int n;
+            while((n = dis.read(buffer)) > 0){
+                //System.out.println("Read " + n + "B.");
+                fos.write(buffer, 0, n);
+            }
 
             //System.out.println("\n> Download finished.");
             fos.close();
+            dis.close();
             s.close();
 
         } catch (IOException e) {
 			System.out.println("Listen:" + e.getMessage());
-		} catch (ClassNotFoundException e) {
-            System.out.println("ClassNotFound:" + e.getMessage());
-        }
+		}
+
+        System.out.println("\n> Download finished...");
+        if(Client.onServerDirectory)
+            System.out.print("(Server) " + Client.serverDirectory + ">");
+        else
+            System.out.print("(Local) " + Client.localDirectory + ">");
 
         return;
     }
