@@ -278,7 +278,7 @@ public class Client {
                         // check if file is already in local directory
                         file = new File(localDirectory + "\\" + joinString(opt));
                         if (file.exists()) {
-                            System.out.print("> File already exists in local directory. Do you wish to downlaod anyway? ");
+                            System.out.print("> File already exists in local directory. Do you wish to download anyway? ");
                             String ans = sc.nextLine();
                             // abort download
                             if (!ans.equals("yes") && !ans.equals("y")) {
