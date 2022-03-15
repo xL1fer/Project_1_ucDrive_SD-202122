@@ -96,7 +96,7 @@ public class Client {
 
             String[] opt;
             String response;
-
+            File file;
 
             // NOTE: for further possible clarifications, we actually
             // only need to send one flush per "switch case" to the server to get the "dir"
@@ -116,6 +116,12 @@ public class Client {
                 }
 
                 opt = sc.nextLine().split(" ");
+                // in case user enters the string " " for example
+                if(opt.length == 0) {
+                    oos.writeUTF("error");
+                    oos.flush();
+                    continue;
+                }
 
                 switch(opt[0]){
                     // list directory
@@ -191,6 +197,7 @@ public class Client {
                             String ans = sc.nextLine();
                             // abort rm
                             if(!ans.equals("yes") && !ans.equals("y")){
+                                System.out.println("> Remove cancelled.");
                                 oos.writeUTF("dir");
                                 oos.flush();
                                 break;
@@ -213,11 +220,12 @@ public class Client {
                             String ans = sc.nextLine();
                             // abort rm
                             if(!ans.equals("yes") && !ans.equals("y")){
+                                System.out.println("> Remove cancelled.");
                                 break;
                             }
 
                             // the desired directory can be a folder named "new folder", so we need to join
-                            File file = new File(localDirectory + "\\" + joinString(opt));
+                            file = new File(localDirectory + "\\" + joinString(opt));
                             // directory not found
                             if(file.exists() == false){
                                 System.out.println("> Directory not found.");
@@ -262,10 +270,26 @@ public class Client {
                         
                         //check if server found the file
                         String res = ois.readUTF();
-                        if(!res.equals("dw start")){
+                        if(!res.equals("dw_start")){
                             System.out.println(res);
                             break;
                         }
+
+                        // check if file is already in local directory
+                        file = new File(localDirectory + "\\" + joinString(opt));
+                        if (file.exists()) {
+                            System.out.print("> File already exists in local directory. Do you wish to downlaod anyway? ");
+                            String ans = sc.nextLine();
+                            // abort download
+                            if (!ans.equals("yes") && !ans.equals("y")) {
+                                System.out.println("> Download cancelled.");
+                                oos.writeUTF("dir");
+                                oos.flush();
+                                break;
+                            }
+                        }
+                        oos.writeUTF("confirm");
+                        oos.flush();
 
                         //server found the file and is now sending the port
                         int port = ois.readInt();
@@ -283,7 +307,7 @@ public class Client {
                             oos.flush();
                             break;
                         }
-                        File file = new File(localDirectory + "\\" + joinString(opt));
+                        file = new File(localDirectory + "\\" + joinString(opt));
                         // directory not found
                         if(file.exists() == false){
                             System.out.println("> Directory not found.");
@@ -295,14 +319,36 @@ public class Client {
                             break;
                         }
 
-                        // no need to send the upload file name
-                        oos.writeUTF("up "/* + joinString(opt)*/);
+                        // we need to send the file name to make the server check if it already exists
+                        oos.writeUTF("up " + joinString(opt));
                         oos.flush();
+
+                        String up_ans = ois.readUTF();
+                        if (!up_ans.equals("up_start")) {
+                            System.out.print(up_ans);
+                            
+                            up_ans = sc.nextLine();
+                            // abort upload
+                            if (!up_ans.equals("yes") && !up_ans.equals("y")) {
+                                System.out.println("> Upload cancelled.");
+                                oos.writeUTF("dir");
+                                oos.flush();
+
+                                // we need to make a read in order to empty oos
+                                ois.readUTF();
+
+                                break;
+                            }
+                            oos.writeUTF("confirm");
+                            oos.flush();
+                        }
 
                         //server is sending the port
                         int up_port = ois.readInt();
                         if(up_port == -1){
                             System.out.println("> Error: Cannot download file.");
+                            // we need to make a read in order to empty oos
+                            ois.readUTF();
                             break;
                         }
 
@@ -310,7 +356,7 @@ public class Client {
 
                         // we need to make a read in order to empty oos
                         ois.readUTF();
-                        
+
                         break;
                     case "clear":
                         clearTerminal();

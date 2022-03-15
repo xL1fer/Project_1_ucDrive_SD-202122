@@ -76,6 +76,7 @@ public class ClientHandler extends Thread{
         }
         File file;
         String opt[];
+        String res;
         // commands loop
         while (true) {
             try{
@@ -139,8 +140,14 @@ public class ClientHandler extends Thread{
                             break;
                         }
                         // start download message
-                        oos.writeUTF("dw start");
+                        oos.writeUTF("dw_start");
                         oos.flush();
+
+                        res = ois.readUTF();
+                        // abort download
+                        if (!res.equals("confirm")) {
+                            break;
+                        }
 
                         ServerUploadHandler uHandler = new ServerUploadHandler(user.getCurPath() + "\\" + joinString(opt));
                         
@@ -151,6 +158,24 @@ public class ClientHandler extends Thread{
                         break;
                     // upload files to server
                     case "up":
+                        // check if file is already in server directory
+                        file = new File(user.getCurPath() + "\\" + joinString(opt));
+                        if (file.exists()) {
+                            oos.writeUTF("> File already exists in server directory. Do you wish to upload anyway? ");
+                            oos.flush();
+
+                            res = ois.readUTF();
+                            // abort upload
+                            if (!res.equals("confirm")) {
+                                break;
+                            }
+                        }
+                        else {
+                            oos.writeUTF("up_start");
+                            oos.flush();
+                        }
+
+
                         ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath());
                         
                         int up_port = dHandler.getPort();
