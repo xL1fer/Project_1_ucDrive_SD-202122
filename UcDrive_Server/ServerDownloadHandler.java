@@ -9,6 +9,10 @@ public class ServerDownloadHandler extends Thread{
     private byte buffer[];
     
     public ServerDownloadHandler(String filePath){
+        this.bufSize = 8192;
+        this.buffer = new byte[bufSize];
+        this.filePath = filePath;
+
         // port = 0 will force operating system to search for unused ports
         try {
             this.listenSocket = new ServerSocket(0);
@@ -16,9 +20,6 @@ public class ServerDownloadHandler extends Thread{
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
         }
-        this.bufSize = 8192;
-        this.buffer = new byte[bufSize];
-        this.filePath = filePath;
     }
 
     public void run(){

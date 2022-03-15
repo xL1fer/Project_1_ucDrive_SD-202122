@@ -11,6 +11,10 @@ public class ServerUploadHandler extends Thread{
     private byte buffer[];
     
     public ServerUploadHandler(String filePath){
+        this.bufSize = 8192; //8KB
+        this.buffer = new byte[bufSize];
+        this.filePath = filePath;
+        
         // port = 0 will force operating system to search for unused ports
         try {
             this.listenSocket = new ServerSocket(0);
@@ -18,10 +22,6 @@ public class ServerUploadHandler extends Thread{
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
         }
-        this.bufSize = 8192; //8KB
-        this.buffer = new byte[bufSize];
-
-        this.filePath = filePath;
     }
 
     public void run(){

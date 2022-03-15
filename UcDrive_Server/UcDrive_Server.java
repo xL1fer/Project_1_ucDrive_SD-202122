@@ -29,6 +29,10 @@ import java.io.*;
  */
 public class UcDrive_Server {
     private static int serverPort = 6000;
+    private static boolean isPrimary = false;
+    private static String secServerIp = "localhost";
+    private static int secServerPort = 7000;
+
     protected static ArrayList<User> users;     // protected - visible by same package
     //private static int fileTransferPort = 7000;   // might not be used again
     //public static ArrayList<Integer> ports;       // might not be used again
@@ -59,6 +63,12 @@ public class UcDrive_Server {
             manageUserData();
 
         saveUsers();
+
+        while(!isPrimary)
+            checkPrimaryServer();
+
+        new UDPServer("localhost", serverPort);
+
         
         try (ServerSocket listenSocket = new ServerSocket(serverPort)) {
             System.out.println("\n:: Listening on port 6000 ::");
@@ -196,17 +206,47 @@ public class UcDrive_Server {
         System.out.println("User " + words[1] + " not found.");
     }
 
-    // not used anymore, OS now handles available ports
-    /*public static int getUnusedPort(){
-        
-        for(int p = serverPort + 1; p < 9000; p++){
-            //if the port is used
-            if(ports.contains(p))
-                continue;
-            //port is not used
-            ports.add(p);
-            return p;
+    private static void checkPrimaryServer(){
+
+        int heartbeat = 0;
+
+        DatagramSocket aSocket;
+        try{
+            aSocket = new DatagramSocket();   
+            aSocket.setSoTimeout(1000);
+        } catch(SocketException e){
+            System.out.println("Socket: " + e.getMessage());
+            return;
         }
-        return 0;
-    }*/
+        
+        byte buffer[] = new byte[1];
+        buffer[0] = (byte)0xAA;
+        
+        while(true){
+            try{
+                InetAddress aHost = InetAddress.getByName(secServerIp);
+                DatagramPacket request = new DatagramPacket(buffer,buffer.length,aHost,serverPort);
+                aSocket.send(request);
+                
+                DatagramPacket reply = new DatagramPacket(buffer, buffer.length);	
+                aSocket.receive(reply);
+                System.out.println("Received heartbeat.");
+                heartbeat = 0;
+            } catch(SocketTimeoutException e){
+                System.out.println("Heartbeat failed.");
+                heartbeat++;
+                if(heartbeat > 4){
+                    isPrimary = true;
+                    System.out.println("This is now the primary server.");
+                    break;
+                }
+
+            } catch(IOException e){
+                System.out.println("IOException: " + e.getMessage());
+            }
+        }
+
+        aSocket.close();
+    }
+    
 }
