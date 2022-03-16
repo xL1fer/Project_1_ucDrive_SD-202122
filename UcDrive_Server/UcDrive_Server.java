@@ -34,8 +34,6 @@ public class UcDrive_Server {
     private static int secServerPort = 7000;
 
     protected static ArrayList<User> users;     // protected - visible by same package
-    //private static int fileTransferPort = 7000;   // might not be used again
-    //public static ArrayList<Integer> ports;       // might not be used again
 
     public static void main(String args[]) {
         clearTerminal();
