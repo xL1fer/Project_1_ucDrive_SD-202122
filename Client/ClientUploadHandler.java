@@ -23,10 +23,14 @@ public class ClientUploadHandler extends Thread{
         try (Socket s = new Socket(serverIp, serverPort)) {
             dos = new DataOutputStream(s.getOutputStream());
             dos.flush();
-            
+            System.out.println("Here1");
             File file = new File(localPath);
+            System.out.println(file.getAbsolutePath());
+            System.out.println("Here2");
             FileInputStream fis = new FileInputStream(file);
+            System.out.println("Here3");
             String fileName = file.getName();
+            System.out.println("Here4");
             //get byte array with data
             //byte fileData[] = Files.readAllBytes(file.toPath());
             

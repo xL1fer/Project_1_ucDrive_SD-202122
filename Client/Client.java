@@ -18,6 +18,9 @@
 import java.net.*;
 import java.nio.file.Files;
 import java.util.Scanner;
+
+import javax.imageio.IIOException;
+
 import java.io.*;
 
 /**
@@ -26,8 +29,14 @@ import java.io.*;
  */
 public class Client {
     static Scanner sc;
+    static String priServerIp;
+    static String priServerPort;
+    static String secServerIp;
+    static String secServerPort;
+    static Socket s;
     static ObjectInputStream ois;
     static ObjectOutputStream oos;
+    static boolean connectedPrimary;
     static boolean onServerDirectory;
     static String localDirectory;
     static String serverDirectory;
@@ -48,30 +57,98 @@ public class Client {
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
 
-        System.out.print("> Server IP [localhost]: ");
-        String serverIp = sc.nextLine();
-        if (serverIp.equals("")) serverIp = "localhost";
+        System.out.print("> Primary Server IP [localhost]: ");
+        priServerIp = sc.nextLine();
+        if (priServerIp.equals("")) priServerIp = "localhost";
 
-        System.out.print("> Server Port [6000]: ");
-        String serverPort = sc.nextLine();
-        if (serverPort.equals("")) serverPort = "6000";
+        System.out.print("> Primary Server Port [6000]: ");
+        priServerPort = sc.nextLine();
+        if (priServerPort.equals("")) priServerPort = "6000";
 
         // using regex to determine wether or not the serverPort string is an Integer
-        if (!serverPort.matches("-?\\d+")) {
+        if (!priServerPort.matches("-?\\d+")) {
             System.out.println("> Server Port must be an integer.");
             sc.close();
             return;
         }
 
-        try (Socket s = new Socket(serverIp, Integer.parseInt(serverPort))) {
-            System.out.println("\n:: Successfully connected to server ::");
+        System.out.print("> Secondary Server IP [localhost]: ");
+        secServerIp = sc.nextLine();
+        if (secServerIp.equals("")) secServerIp = "localhost";
+
+        System.out.print("> Secondary Server Port [7000]: ");
+        secServerPort = sc.nextLine();
+        if (secServerPort.equals("")) secServerPort = "7000";
+
+        // using regex to determine wether or not the serverPort string is an Integer
+        if (!secServerPort.matches("-?\\d+")) {
+            System.out.println("> Server Port must be an integer.");
+            sc.close();
+            return;
+        }
+
+        //connect to server
+        if(!connectToServer())
+            return;
+
+        sendAuthentication();
+
+        menu();
+
+        try {
+            s.close();
+        } catch (IOException e) {
+            System.out.println("IO: " + e.getMessage());
+        }
+        sc.close();
+    }
+
+    private static boolean connectToServer(){
+        
+        System.out.println("> Attempting to connect to primary server.");
+        try {
+            //attempt to connect to primary server
+            s = new Socket(priServerIp, Integer.parseInt(priServerPort));
+            System.out.println("\n:: Successfully connected to primary server ::");
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
+            connectedPrimary = true;
+        } catch(IOException e){
+            //if there's an error connecting to the primary server
+            System.out.println("> Primary server offline.");
+            System.out.println("> Attempting to connect to secondary server.");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e2) {
+                System.out.println("Interrupted: " + e2.getMessage());
+                return false;
+            }
+            
+            try{
+                //attempt to connect to secondary server
+                s = new Socket(secServerIp, Integer.parseInt(secServerPort));
+                System.out.println("\n:: Successfully connected to secondary server ::");
+                ois = new ObjectInputStream(s.getInputStream());
+                oos = new ObjectOutputStream(s.getOutputStream());
+                oos.flush();
+                connectedPrimary = false;
+            } catch(IOException e1){
+                //there's an error connecting to the secondary server
+                //no servers online
+                System.out.println("> Secondary server offline.");
+                System.err.println("> No server online.");
+                return false;
+            }
+        }
+        return true;
+    }
 
-            // TODO: make so that once user can only be logged in one device at a time?
-            // authentication loop
-            while (true) {
+    private static void sendAuthentication(){
+        // TODO: make so that once user can only be logged in one device at a time?
+        // authentication loop
+        while (true) {
+            try{
                 // READ STRING FROM KEYBOARD
                 System.out.print("> Username: "); 
                 String username = sc.nextLine();
@@ -92,21 +169,20 @@ public class Client {
                 else{
                     System.out.println("> Invalid username/password.");
                 }
+            } catch (IOException e) {
+                //there's an error with the server, try to connect again
+                System.out.println("IO: " + e.getMessage());
+                connectToServer();
             }
+        }
+    }
 
-            String[] opt;
-            String response;
-            File file;
-
-            // NOTE: for further possible clarifications, we actually
-            // only need to send one flush per "switch case" to the server to get the "dir"
-            // response. Any other unecessary flush we try to do will lead to
-            // a overfilled "oos". This occurs because the server ALWAYS sends the "dir"
-            // response after finishing the "switch statement"
-
-            // commands loop
-            while (true) {
-                
+    private static void menu() {
+        String[] opt;
+        String response;
+        File file;
+        while (true) {
+            try{    
                 if(onServerDirectory){
                     serverDirectory = ois.readUTF();
                     System.out.print("(Server) " + serverDirectory + ">");
@@ -297,7 +373,11 @@ public class Client {
                             System.out.println("> Error: Cannot download file.");
                             break;
                         }
-                        ClientDownloadHandler dHandler = new ClientDownloadHandler(serverIp, port, localDirectory);
+
+                        if(connectedPrimary)
+                            new ClientDownloadHandler(priServerIp, port, localDirectory);
+                        else
+                            new ClientDownloadHandler(secServerIp, port, localDirectory);
 
                         break;
                     case "up":
@@ -352,8 +432,11 @@ public class Client {
                             break;
                         }
 
-                        ClientUploadHandler uHandler = new ClientUploadHandler(serverIp, up_port, file.getPath());
-
+                        if(connectedPrimary)
+                            new ClientUploadHandler(priServerIp, up_port, localDirectory);
+                        else
+                            new ClientUploadHandler(secServerIp, up_port, localDirectory);
+                        
                         // we need to make a read in order to empty oos
                         ois.readUTF();
 
@@ -394,14 +477,14 @@ public class Client {
                         }
                         break;
                 }
+            } catch(IOException e){
+                //try to connect to server
+                if(!connectToServer())
+                    return;
 
+                sendAuthentication();
             }
-        
-        } catch (IOException e) {
-            System.out.println("IO:" + e.getMessage());
         }
-
-        sc.close();
     }
 
     private static String getFileList(){
