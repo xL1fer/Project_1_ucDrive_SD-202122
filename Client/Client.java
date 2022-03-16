@@ -387,6 +387,10 @@ public class Client {
                             oos.flush();
                             break;
                         }
+                        if (opt.length < 2) {
+                            System.out.println("> Too few arguments.");
+                            break;
+                        }
                         file = new File(localDirectory + "\\" + joinString(opt));
                         // directory not found
                         if(file.exists() == false){
@@ -433,9 +437,9 @@ public class Client {
                         }
 
                         if(connectedPrimary)
-                            new ClientUploadHandler(priServerIp, up_port, localDirectory);
+                            new ClientUploadHandler(priServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         else
-                            new ClientUploadHandler(secServerIp, up_port, localDirectory);
+                            new ClientUploadHandler(secServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         
                         // we need to make a read in order to empty oos
                         ois.readUTF();
