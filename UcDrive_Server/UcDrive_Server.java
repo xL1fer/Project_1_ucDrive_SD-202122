@@ -32,6 +32,8 @@ public class UcDrive_Server {
     private static String otherServerIp;
     private static String myServerPort;
     private static String otherServerPort;
+    private static int maxFailedHearbeats = 4;
+    private static int heartbeatDelay = 1000;
 
     protected static ArrayList<User> users;     // protected - visible by same package
 
@@ -102,7 +104,7 @@ public class UcDrive_Server {
         //
 
         // heartbeat UDP socket
-        new UDPServer(myServerIp, Integer.parseInt(myServerPort));
+        new UDPServer(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
         
         try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");
@@ -240,13 +242,14 @@ public class UcDrive_Server {
         System.out.println("User " + words[1] + " not found.");
     }
 
+    // TODO: config variable for heartbet time and timeout
     private static void checkServer(String serverIp, int serverPort){
         int heartbeat = 0;
 
         DatagramSocket aSocket;
         try{
             aSocket = new DatagramSocket();   
-            aSocket.setSoTimeout(1000);
+            aSocket.setSoTimeout(heartbeatDelay);
         } catch(SocketException e){
             System.out.println("Socket: " + e.getMessage());
             return;
@@ -269,7 +272,7 @@ public class UcDrive_Server {
             } catch(SocketTimeoutException e){
                 System.out.println("Heartbeat failed.");
                 heartbeat++;
-                if(heartbeat > 4){
+                if(heartbeat > maxFailedHearbeats){
                     System.out.println("Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" is down.");
                     break;
                 }

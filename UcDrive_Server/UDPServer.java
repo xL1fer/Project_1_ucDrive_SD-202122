@@ -5,10 +5,12 @@ public class UDPServer extends Thread{
     private String serverIp;
     private int port;
     private DatagramSocket aSocket;
+    private int heartbeatDelay;
 
-    public UDPServer(String serverIp, int port){
+    public UDPServer(String serverIp, int port, int heartbeatDelay){
         this.serverIp = serverIp;
         this.port = port;
+        this.heartbeatDelay = heartbeatDelay - 100;
         try{
 			this.aSocket = new DatagramSocket(port);
 			this.start();
@@ -29,7 +31,7 @@ public class UDPServer extends Thread{
                 DatagramPacket reply = new DatagramPacket(buffer, 
                 buffer.length, request.getAddress(), request.getPort());
                 aSocket.send(reply);
-                Thread.sleep(900);
+                Thread.sleep(heartbeatDelay);
             }
         } catch(IOException e){
             System.out.println("IOException: " + e.getMessage());
