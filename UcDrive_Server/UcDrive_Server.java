@@ -28,13 +28,10 @@ import java.io.*;
  * the server application
  */
 public class UcDrive_Server {
-    private static boolean isPrimary = false;
-    private static String firstServerIp;
-    private static String secondServerIp;
     private static String myServerIp;
-    private static String firstServerPort;
-    private static String secondServerPort;
-    private static int myServerPort;
+    private static String otherServerIp;
+    private static String myServerPort;
+    private static String otherServerPort;
 
     protected static ArrayList<User> users;     // protected - visible by same package
 
@@ -56,69 +53,58 @@ public class UcDrive_Server {
         System.out.println("> Do you want to manage \"user.data\" file?");
         String opt = sc.nextLine();
 
-        // TODO: make a thread responsible to handling the user data while the other is already running the server
+        // TODO: (not prioritary) make a thread responsible for handling the user data while the other is already running the server
         if(opt.equals("yes") || opt.equals("y"))
             manageUserData();
 
         saveUsers();
 
+        System.out.print("> My Server IP [localhost]: ");
+        myServerIp = sc.nextLine();
+        if (myServerIp.equals("")) myServerIp = "localhost";
 
-
-        System.out.print("> Primary Server IP [localhost]: ");
-        firstServerIp = sc.nextLine();
-        if (firstServerIp.equals("")) firstServerIp = "localhost";
-
-        System.out.print("> Primary Server Port [6000]: ");
-        firstServerPort = sc.nextLine();
-        if (firstServerPort.equals("")) firstServerPort = "6000";
+        System.out.print("> My Server Port [6000]: ");
+        myServerPort = sc.nextLine();
+        if (myServerPort.equals("")) myServerPort = "6000";
 
         // using regex to determine wether or not the serverPort string is an Integer
-        if (!firstServerPort.matches("-?\\d+")) {
+        if (!myServerPort.matches("-?\\d+")) {
             System.out.println("> Server Port must be an integer.");
             sc.close();
             return;
         }
 
-        System.out.print("> Secondary Server IP [localhost]: ");
-        secondServerIp = sc.nextLine();
-        if (secondServerIp.equals("")) secondServerIp = "localhost";
+        System.out.print("> Other Server IP [localhost]: ");
+        otherServerIp = sc.nextLine();
+        if (otherServerIp.equals("")) otherServerIp = "localhost";
 
-        System.out.print("> Secondary Server Port [7000]: ");
-        secondServerPort = sc.nextLine();
-        if (secondServerPort.equals("")) secondServerPort = "7000";
+        System.out.print("> Other Server Port [7000]: ");
+        otherServerPort = sc.nextLine();
+        if (otherServerPort.equals("")) otherServerPort = "7000";
 
         // using regex to determine wether or not the serverPort string is an Integer
-        if (!secondServerPort.matches("-?\\d+")) {
+        if (!otherServerPort.matches("-?\\d+")) {
             System.out.println("> Server Port must be an integer.");
             sc.close();
             return;
         }
 
+        // TODO: create UDP socket for file receiving
+        //
 
+        // check if the other server is up
+        checkServer(otherServerIp, Integer.parseInt(otherServerPort));
 
-        // check if the first server is up
-        boolean foundFirstServer = checkServer(firstServerIp, Integer.parseInt(firstServerPort));
-        if (!foundFirstServer) {
-            myServerIp = firstServerIp;
-            myServerPort = Integer.parseInt(firstServerPort);
-        }
-        // if the first server was found, we are good to go as soon as we get out of "checkServer" function (because this funciton only ends when the server being checked goes down)
-        else {
-            myServerIp = secondServerIp;
-            myServerPort = Integer.parseInt(secondServerPort);
-            isPrimary = true;
-        }
+        // TODO: kill UDP socket for file receiving
+        //
 
-        // we only enter this statement in case the first server was not up
-        if (!isPrimary) {
-            checkServer(secondServerIp, Integer.parseInt(secondServerPort));
-            isPrimary = true;
-        }
+        // TODO: create UDP socket for file sending
+        //
 
-
-        new UDPServer(myServerIp, myServerPort);
+        // heartbeat UDP socket
+        new UDPServer(myServerIp, Integer.parseInt(myServerPort));
         
-        try (ServerSocket listenSocket = new ServerSocket(myServerPort)) {
+        try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");
             System.out.println("LISTEN SOCKET=" + listenSocket);
             while (true) {
@@ -254,9 +240,8 @@ public class UcDrive_Server {
         System.out.println("User " + words[1] + " not found.");
     }
 
-    private static boolean checkServer(String serverIp, int serverPort){
+    private static void checkServer(String serverIp, int serverPort){
         int heartbeat = 0;
-        boolean found = false;
 
         DatagramSocket aSocket;
         try{
@@ -264,7 +249,7 @@ public class UcDrive_Server {
             aSocket.setSoTimeout(1000);
         } catch(SocketException e){
             System.out.println("Socket: " + e.getMessage());
-            return false;
+            return;
         }
         
         byte buffer[] = new byte[1];
@@ -280,15 +265,12 @@ public class UcDrive_Server {
                 aSocket.receive(reply);
 
                 heartbeat = 0;
-                found = true;
                 System.out.println("Received heartbeat.");
             } catch(SocketTimeoutException e){
                 System.out.println("Heartbeat failed.");
                 heartbeat++;
                 if(heartbeat > 4){
-                    //isPrimary = true;
-                    //System.out.println("This is now the primary server.");
-                    System.out.println("Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" failed.");
+                    System.out.println("Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" is down.");
                     break;
                 }
 
@@ -299,7 +281,7 @@ public class UcDrive_Server {
 
         aSocket.close();
 
-        return found;
+        return;
     }
     
 }

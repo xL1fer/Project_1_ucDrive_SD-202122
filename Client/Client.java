@@ -18,9 +18,6 @@
 import java.net.*;
 import java.nio.file.Files;
 import java.util.Scanner;
-
-import javax.imageio.IIOException;
-
 import java.io.*;
 
 /**
@@ -36,7 +33,7 @@ public class Client {
     static Socket s;
     static ObjectInputStream ois;
     static ObjectOutputStream oos;
-    static boolean connectedPrimary;
+    static int connectedServer;          // denotates to which server the client is connected (0 = none)
     static boolean onServerDirectory;
     static String localDirectory;
     static String serverDirectory;
@@ -54,6 +51,7 @@ public class Client {
         System.out.println("\n ucDrive v0.01\n Client Application\n\n====================\n");
 
         sc = new Scanner(System.in);
+        connectedServer = 0;
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
 
@@ -104,7 +102,18 @@ public class Client {
     }
 
     private static boolean connectToServer(){
-        
+
+        System.out.println("> Searching online servers...");
+
+        if (connectedServer > 0) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e2) {
+                System.out.println("Interrupted: " + e2.getMessage());
+                return false;
+            }
+        }
+
         System.out.println("> Attempting to connect to primary server.");
         try {
             //attempt to connect to primary server
@@ -113,17 +122,11 @@ public class Client {
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
-            connectedPrimary = true;
+            connectedServer = 1;
         } catch(IOException e){
             //if there's an error connecting to the primary server
             System.out.println("> Primary server offline.");
             System.out.println("> Attempting to connect to secondary server.");
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e2) {
-                System.out.println("Interrupted: " + e2.getMessage());
-                return false;
-            }
             
             try{
                 //attempt to connect to secondary server
@@ -132,7 +135,7 @@ public class Client {
                 ois = new ObjectInputStream(s.getInputStream());
                 oos = new ObjectOutputStream(s.getOutputStream());
                 oos.flush();
-                connectedPrimary = false;
+                connectedServer = 2;
             } catch(IOException e1){
                 //there's an error connecting to the secondary server
                 //no servers online
@@ -374,9 +377,9 @@ public class Client {
                             break;
                         }
 
-                        if(connectedPrimary)
+                        if(connectedServer == 1)
                             new ClientDownloadHandler(priServerIp, port, localDirectory);
-                        else
+                        else if (connectedServer == 2)
                             new ClientDownloadHandler(secServerIp, port, localDirectory);
 
                         break;
@@ -436,9 +439,9 @@ public class Client {
                             break;
                         }
 
-                        if(connectedPrimary)
+                        if(connectedServer == 1)
                             new ClientUploadHandler(priServerIp, up_port, localDirectory + "\\" + joinString(opt));
-                        else
+                        else if (connectedServer == 2)
                             new ClientUploadHandler(secServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         
                         // we need to make a read in order to empty oos
@@ -467,6 +470,7 @@ public class Client {
                         onServerDirectory = !onServerDirectory;
                         break;
                     // ignore empty input
+                    // TODO: if user inputs a string starting with spaces and has letters in the middle, it should print "command not found"
                     case "":
                         if (onServerDirectory){
                             oos.writeUTF("dir");

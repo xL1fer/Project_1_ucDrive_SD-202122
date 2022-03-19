@@ -34,7 +34,6 @@ public class UDPServer extends Thread{
         } catch(IOException e){
             System.out.println("IOException: " + e.getMessage());
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
