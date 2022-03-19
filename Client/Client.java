@@ -487,6 +487,8 @@ public class Client {
                     return;
 
                 sendAuthentication();
+                // reset directory to server directory
+                onServerDirectory = true;
             }
         }
     }
