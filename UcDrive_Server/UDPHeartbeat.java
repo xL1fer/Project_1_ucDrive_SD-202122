@@ -1,13 +1,13 @@
 import java.io.*;
 import java.net.*;
 
-public class UDPServer extends Thread{
+public class UDPHeartbeat extends Thread{
     private String serverIp;
     private int port;
     private DatagramSocket aSocket;
     private int heartbeatDelay;
 
-    public UDPServer(String serverIp, int port, int heartbeatDelay){
+    public UDPHeartbeat(String serverIp, int port, int heartbeatDelay){
         this.serverIp = serverIp;
         this.port = port;
         this.heartbeatDelay = heartbeatDelay - 100;

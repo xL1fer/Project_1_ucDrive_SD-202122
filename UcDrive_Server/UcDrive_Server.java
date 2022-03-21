@@ -35,6 +35,8 @@ public class UcDrive_Server {
     private static int maxFailedHearbeats = 4;
     private static int heartbeatDelay = 1000;
 
+    private static int portManager = 9000;
+
     protected static ArrayList<User> users;     // protected - visible by same package
 
     public static void main(String args[]) {
@@ -104,7 +106,7 @@ public class UcDrive_Server {
         //
 
         // heartbeat UDP socket
-        new UDPServer(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
+        new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
         
         try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");
