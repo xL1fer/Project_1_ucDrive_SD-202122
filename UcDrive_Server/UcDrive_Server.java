@@ -28,14 +28,14 @@ import java.io.*;
  * the server application
  */
 public class UcDrive_Server {
-    private static String myServerIp;
-    private static String otherServerIp;
-    private static String myServerPort;
-    private static String otherServerPort;
-    private static int maxFailedHearbeats = 4;
-    private static int heartbeatDelay = 1000;
+    protected static String myServerIp;
+    protected static String otherServerIp;
+    protected static String myServerPort;
+    protected static String otherServerPort;
+    protected static int maxFailedHearbeats = 4;
+    protected static int heartbeatDelay = 1000;
 
-    private static int portManager = 9000;
+    protected static int portManager = 9000;
 
     protected static ArrayList<User> users;     // protected - visible by same package
 
@@ -93,17 +93,20 @@ public class UcDrive_Server {
             return;
         }
 
-        // TODO: create UDP socket for file receiving
-        //
+        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
 
         // check if the other server is up
-        checkServer(otherServerIp, Integer.parseInt(otherServerPort));
+        if(!checkServer(otherServerIp, Integer.parseInt(otherServerPort))){
+            System.out.println("Unexpected error.");
+            udpPortReceiver.interrupt();
+            sc.close();
+            return;
+        }
 
-        // TODO: kill UDP socket for file receiving
-        //
+        // this is now the primary server, end udpreceiver
+        udpPortReceiver.interrupt();
 
-        // TODO: create UDP socket for file sending
-        //
+        //UDPPortManager udpPortSender = new UDPPortManager(otherServerIp, portManager, true);
 
         // heartbeat UDP socket
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
@@ -245,7 +248,7 @@ public class UcDrive_Server {
     }
 
     // TODO: config variable for heartbet time and timeout
-    private static void checkServer(String serverIp, int serverPort){
+    private static boolean checkServer(String serverIp, int serverPort){
         int heartbeat = 0;
 
         DatagramSocket aSocket;
@@ -254,7 +257,7 @@ public class UcDrive_Server {
             aSocket.setSoTimeout(heartbeatDelay);
         } catch(SocketException e){
             System.out.println("Socket: " + e.getMessage());
-            return;
+            return false;
         }
         
         byte buffer[] = new byte[1];
@@ -281,12 +284,14 @@ public class UcDrive_Server {
 
             } catch(IOException e){
                 System.out.println("IOException: " + e.getMessage());
+                aSocket.close();
+                return false;
             }
         }
 
         aSocket.close();
 
-        return;
+        return true;
     }
     
 }
