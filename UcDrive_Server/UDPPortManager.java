@@ -8,7 +8,9 @@ public class UDPPortManager extends Thread{
     private String otherServerIp; 
     private int port;
     private boolean isPrimary;
-    private int timeout = 2000;
+
+    private static int maxTimeouts = 5;
+    private static int timeout = 2000;
 
 
     //If this is the primary PortManager, this will receive port numbers
@@ -35,6 +37,7 @@ public class UDPPortManager extends Thread{
 
     public void run(){
         int availablePort;
+        int timeoutCounter = 0;
         if(isPrimary){
             //open socket for communicating
             try{
@@ -61,26 +64,47 @@ public class UDPPortManager extends Thread{
                 System.out.println("Got port " + availablePort + " from OS");
                 byte buffer[];
 
+                //convert int to byte array
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream dos = new DataOutputStream(baos);
                 dos.writeInt(availablePort);
                 dos.flush();
                 dos.close();
-
                 buffer = baos.toByteArray();
                 System.out.println("Length do buffer!! deve ser 4 bytes");
                 System.out.println(buffer.length);
-
+                
                 InetAddress aHost = InetAddress.getByName(otherServerIp);
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length, aHost, port);
-                aSocket.send(packet);
-                System.out.println("Sent port.");
+                
+                //loop sending port until this thread receives ACK
+                while(true){
+                    aSocket.send(packet);
+                    System.out.println("Sent port.");
 
-                DatagramPacket ack = new DatagramPacket(buffer, buffer.length);
-                aSocket.receive(ack);
-                System.out.println("Received acknowledgment");
+                    DatagramPacket ack = new DatagramPacket(buffer, buffer.length);
+                    //try to receive acknowledgement
+                    try{
+                        aSocket.receive(ack);
+                        timeoutCounter = 0;
+                    } catch(IOException e){
+                        System.out.println("UDPPortManager(Primary) - IO: " + e.getMessage());
+                        System.out.println("UDPPortManager(Primary) - Receive timeout.");
 
+                        timeoutCounter++;
+                        //if the receive operation times out too much times end this thread
+                        if(timeoutCounter > maxTimeouts)
+                            return;
+                        continue;
+                    }
+                    System.out.println("Received acknowledgment");
+                    break;
+                }
+
+                aSocket.close();
                 //SEND FILE
+                System.out.println("File path: " + filePath);
+                System.out.println("File name: " + fileName);
                 new UDPFileSender(otherServerIp, availablePort, filePath, fileName);
 
             } catch(IOException e){
@@ -117,7 +141,7 @@ public class UDPPortManager extends Thread{
                     System.out.println("UDPPortManager - Available port for receiving files is " + availablePort);
                     
                     //RECEIVE FILE
-                    
+                    new UDPFileReceiver(availablePort);
                     
                 } catch(IOException e){
                     System.out.println("IO: " + e.getMessage());
