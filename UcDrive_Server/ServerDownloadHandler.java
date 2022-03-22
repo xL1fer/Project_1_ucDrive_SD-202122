@@ -23,7 +23,7 @@ public class ServerDownloadHandler extends Thread{
     }
 
     public void run(){
-
+        String fileName;
         try {
             System.out.println("\n:: Upload Socket listening on port " + getPort() + " ::");
             System.out.println("UPLOAD LISTEN SOCKET=" + listenSocket);
@@ -32,7 +32,7 @@ public class ServerDownloadHandler extends Thread{
             
             dis = new DataInputStream(clientSocket.getInputStream());
 
-            String fileName = dis.readUTF();
+            fileName = dis.readUTF();
 
             File newFile = new File(filePath + "\\" + fileName);
             FileOutputStream fos = new FileOutputStream(newFile);
@@ -50,10 +50,15 @@ public class ServerDownloadHandler extends Thread{
             listenSocket.close();
         } catch (IOException e) {
             System.out.println("IO:" + e.getMessage());
+            return;
         }
 
         //System.out.println("Up removing unused port");
         //UcDrive_Server.ports.remove(Integer.valueOf(port));
+
+        //send files to secondary server
+        UDPPortManager udpPortSender = new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, filePath, fileName);
+
         return;
 
     }

@@ -3,16 +3,33 @@ import java.net.*;
 
 public class UDPPortManager extends Thread{
     private DatagramSocket aSocket;
+    private String filePath;
+    private String fileName;
     private String otherServerIp; 
     private int port;
     private boolean isPrimary;
     private int timeout = 2000;
 
+
     //If this is the primary PortManager, this will receive port numbers
-    public UDPPortManager(String otherServerIp, int port, boolean isPrimary){
+    public UDPPortManager(String otherServerIp, int port){
         this.otherServerIp = otherServerIp;
         this.port = port;
-        this.isPrimary = isPrimary;
+        this.isPrimary = false;
+        start();
+    }
+
+    public UDPPortManager(String otherServerIp, int port, String filePath, String fileName){
+        this.otherServerIp = otherServerIp;
+        this.port = port;
+        this.filePath = filePath;
+        this.fileName = fileName;
+        this.isPrimary = true;
+        if(!UcDrive_Server.otherServerUp){
+            System.out.println("UDPPortManager(Primary) - Cannot replicate file because other server is down.");
+            return;
+        }
+
         start();
     }
 
@@ -27,6 +44,7 @@ public class UDPPortManager extends Thread{
                 this.aSocket.setSoTimeout(timeout);
             } catch (SocketException e) {
                 System.out.println("Socket: " + e.getMessage());
+                return;
             }
 
             DatagramSocket bSocket;
@@ -63,9 +81,11 @@ public class UDPPortManager extends Thread{
                 System.out.println("Received acknowledgment");
 
                 //SEND FILE
+                new UDPFileSender(otherServerIp, availablePort, filePath, fileName);
 
             } catch(IOException e){
                 System.out.println("IO: " + e.getMessage());
+                return;
             }
         }
         else{
@@ -79,6 +99,7 @@ public class UDPPortManager extends Thread{
                 aSocket.setSoTimeout(timeout);
             } catch (SocketException e) {
                 System.out.println("Socket: " + e.getMessage());
+                return;
             }
 
             while(true){
@@ -93,7 +114,7 @@ public class UDPPortManager extends Thread{
                     DatagramPacket reply = new DatagramPacket(buffer, buffer.length, packet.getAddress(), packet.getPort());
                     aSocket.send(reply);
 
-                    System.out.println("Available port for receiving files is " + availablePort);
+                    System.out.println("UDPPortManager - Available port for receiving files is " + availablePort);
                     
                     //RECEIVE FILE
                     
@@ -101,7 +122,7 @@ public class UDPPortManager extends Thread{
                 } catch(IOException e){
                     System.out.println("IO: " + e.getMessage());
                     if(interrupted()){
-                        System.out.println("Thread interrupted.");
+                        System.out.println("UDPPortManager- Thread interrupted.");
                         aSocket.close();
                         return;
                     }

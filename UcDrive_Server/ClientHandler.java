@@ -177,7 +177,7 @@ public class ClientHandler extends Thread{
 
 
                         ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath());
-                        UDPPortManager udpPortSender = new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
+                        
                         int up_port = dHandler.getPort();
                         oos.writeInt(up_port);
                         oos.flush();

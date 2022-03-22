@@ -13,6 +13,7 @@ public class UDPHeartbeat extends Thread{
         this.heartbeatDelay = heartbeatDelay - 100;
         try{
 			this.aSocket = new DatagramSocket(port);
+            this.aSocket.setSoTimeout(heartbeatDelay);
 			this.start();
 		} catch (SocketException e) {
 			System.out.println("Socket: " + e.getMessage());
@@ -21,22 +22,24 @@ public class UDPHeartbeat extends Thread{
 
     public void run(){
         System.out.println("\n:: UDP Socket listening on port " + port + " ::");
-        try{
-            while(true){
+        while(true){
+            try{
                 byte buffer[] = new byte[1];
                 buffer[0] = (byte)0xAA;	
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 aSocket.receive(request);
+                UcDrive_Server.otherServerUp = true;
 
                 DatagramPacket reply = new DatagramPacket(buffer, 
                 buffer.length, request.getAddress(), request.getPort());
                 aSocket.send(reply);
                 Thread.sleep(heartbeatDelay);
+            } catch(IOException e){
+                //System.out.println("UDPHeartbeat - IOException: " + e.getMessage());
+                UcDrive_Server.otherServerUp = false;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch(IOException e){
-            System.out.println("IOException: " + e.getMessage());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 }

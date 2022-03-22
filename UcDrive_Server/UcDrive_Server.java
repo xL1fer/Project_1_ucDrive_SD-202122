@@ -34,6 +34,7 @@ public class UcDrive_Server {
     protected static String otherServerPort;
     protected static int maxFailedHearbeats = 4;
     protected static int heartbeatDelay = 1000;
+    protected static boolean otherServerUp;
 
     protected static int portManager = 9000;
 
@@ -93,7 +94,7 @@ public class UcDrive_Server {
             return;
         }
 
-        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
+        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager);
 
         // check if the other server is up
         if(!checkServer(otherServerIp, Integer.parseInt(otherServerPort))){
@@ -110,6 +111,7 @@ public class UcDrive_Server {
 
         // heartbeat UDP socket
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
+        
         
         try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");

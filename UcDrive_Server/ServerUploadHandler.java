@@ -1,17 +1,15 @@
 import java.io.*;
 import java.net.*;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
+
 
 public class ServerUploadHandler extends Thread{
     private DataOutputStream dos;
     private String filePath;
     ServerSocket listenSocket;
-    private int bufSize;
+    private int bufSize = 8192;
     private byte buffer[];
     
     public ServerUploadHandler(String filePath){
-        this.bufSize = 8192; //8KB
         this.buffer = new byte[bufSize];
         this.filePath = filePath;
         
