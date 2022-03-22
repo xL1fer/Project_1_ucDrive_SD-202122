@@ -50,7 +50,7 @@ public class UDPFileSender extends Thread{
 
             //send file name
             buffer = (filePath + "\\" + fileName).getBytes();
-            packet = new DatagramPacket(buffer, buffer.length);
+            packet = new DatagramPacket(buffer, buffer.length, aHost, port);
             while(true){
                 aSocket.send(packet);
                 try{
@@ -102,13 +102,14 @@ public class UDPFileSender extends Thread{
 
 
             packet = new DatagramPacket(buffer, buffer.length);
-            //receive calculated MD5 Hash from receiver
+            //receive calculated SHA256 Hash from receiver
             aSocket.receive(packet);
 
-            byte hash[] = getMD5Hash(filePath + "\\" + fileName);
+            byte hash[] = checksum(filePath + "\\" + fileName);
+            byte receivedHash[] = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());;
             
             //hashs are different
-            if(!Arrays.equals(packet.getData(), hash)){
+            if(!Arrays.equals(hash, receivedHash)){
                 System.out.println("UDPFileSender - File hash different.");
                 //send wrong signal
                 ackBuf = new byte[] {(byte) 0xFF};
@@ -140,23 +141,23 @@ public class UDPFileSender extends Thread{
         return array;
     }
     
-    /* 
-        Method referenced from StackOverflow.
+    /*
+    Reference: StackOverflow
     */
-    private byte[] getMD5Hash(String filePath){
+    private byte[] checksum(String filepath) throws IOException {
         MessageDigest md;
-        try{
-            md = MessageDigest.getInstance("MD5");
-            try (InputStream is = Files.newInputStream(Paths.get("file.txt"));
-                    DigestInputStream dis = new DigestInputStream(is, md)) {
-            }
-        } catch(IOException e){
-            System.out.println("UDPFileSender - IO: " + e.getMessage());
-            return null;
-        } catch(NoSuchAlgorithmException e){
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
             System.out.println("UDPFileSender - NoSuchAlgorithm: " + e.getMessage());
             return null;
         }
+        // file hashing with DigestInputStream  
+        try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
+            while (dis.read() != -1) ; //empty loop to clear the data
+            md = dis.getMessageDigest();
+        }
+
         return md.digest();
     }
     

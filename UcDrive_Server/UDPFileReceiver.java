@@ -38,7 +38,8 @@ public class UDPFileReceiver extends Thread{
             aSocket.receive(packet);
 
             //store file path
-            filePath = new String(packet.getData());
+            filePath = new String(packet.getData(), 0, packet.getLength());
+            System.out.println("UDPFileReceiver - Filepath: " + filePath);
             File newFile = new File(filePath);
             FileOutputStream fos = new FileOutputStream(newFile);
 
@@ -54,8 +55,10 @@ public class UDPFileReceiver extends Thread{
                 System.out.println("UDPFileReceiver - Received " + packet.getLength() + " bytes");
 
                 //if packet is empty
-                if(Arrays.equals(packet.getData(), emptyBuffer))
+                if(Arrays.equals(packet.getData(), emptyBuffer)){
+                    System.out.println("UDPFileReceiver - Received empty packet.");
                     break;
+                }
 
 
                 //write data to file
@@ -64,8 +67,12 @@ public class UDPFileReceiver extends Thread{
             }
             fos.close();
 
-            //calculate MD5 hash for the new file
-            byte hash[] = getMD5Hash(filePath);
+            //calculate SHA256 hash for the new file
+            byte hash[] = checksum(filePath);
+
+            System.out.println("UDPFileReceiver - Hash: " + Arrays.toString(hash));
+            System.out.println("UDPFileReceiver - Hash size: " + hash.length);
+
             packet = new DatagramPacket(hash, hash.length, ack.getAddress(), ack.getPort());
             aSocket.send(packet);
 
@@ -79,10 +86,6 @@ public class UDPFileReceiver extends Thread{
             else{
                 System.out.println("UDPFileReceiver - File bad.");
             }
-
-
-
-
         } catch (IOException e) {
             System.out.println("UDPFileReceiver - IO: " + e.getMessage());
             return;
@@ -102,20 +105,20 @@ public class UDPFileReceiver extends Thread{
     /* 
         Method referenced from StackOverflow.
     */
-    private byte[] getMD5Hash(String filePath){
+    private static byte[] checksum(String filepath) throws IOException {
         MessageDigest md;
-        try{
-            md = MessageDigest.getInstance("MD5");
-            try (InputStream is = Files.newInputStream(Paths.get("file.txt"));
-                    DigestInputStream dis = new DigestInputStream(is, md)) {
-            }
-        } catch(IOException e){
-            System.out.println("UDPFileSender - IO: " + e.getMessage());
-            return null;
-        } catch(NoSuchAlgorithmException e){
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
             System.out.println("UDPFileSender - NoSuchAlgorithm: " + e.getMessage());
             return null;
         }
+        // file hashing with DigestInputStream  
+        try (DigestInputStream dis = new DigestInputStream(new FileInputStream(filepath), md)) {
+            while (dis.read() != -1) ; //empty loop to clear the data
+            md = dis.getMessageDigest();
+        }
+
         return md.digest();
     }
 }
