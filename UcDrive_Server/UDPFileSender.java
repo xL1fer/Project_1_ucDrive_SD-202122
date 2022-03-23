@@ -26,6 +26,7 @@ public class UDPFileSender extends Thread{
 
     public void run(){
         int timeoutCounter = 0;
+        boolean fileComplete;
         try{
             aSocket = new DatagramSocket();
             aSocket.setSoTimeout(timeout);
@@ -47,36 +48,12 @@ public class UDPFileSender extends Thread{
             DatagramPacket ack = new DatagramPacket(ackBuf, ackBuf.length);
 
 
-
-            //send file name
-            buffer = (filePath + "\\" + fileName).getBytes();
-            packet = new DatagramPacket(buffer, buffer.length, aHost, port);
             while(true){
-                aSocket.send(packet);
-                try{
-                    aSocket.receive(ack);
-                    timeoutCounter = 0;
-                    break;
-                } catch (IOException e){
-                    System.out.println("UDPFileSender - IO: " + e.getMessage());
-                    timeoutCounter++;
-                    //if the receive operation times out too much times end this thread
-                    if(timeoutCounter > maxTimeouts){
-                        fis.close();
-                        return;
-                    }
-                }
-            }
-
-            int n;
-            //send file
-            while((n = fis.read(buffer)) > 0){
+                //send file name
+                buffer = (filePath + "\\" + fileName).getBytes();
+                packet = new DatagramPacket(buffer, buffer.length, aHost, port);
                 while(true){
-                    packet = new DatagramPacket(buffer, n, aHost, port);
-                    System.out.println("UDPFileSender - Sent " + packet.getLength() + " bytes");
                     aSocket.send(packet);
-
-                    //if this thread receives ACK, break this loop and continue sending parts of the file
                     try{
                         aSocket.receive(ack);
                         timeoutCounter = 0;
@@ -90,37 +67,70 @@ public class UDPFileSender extends Thread{
                             return;
                         }
                     }
-
                 }
+
+                int n;
+                //send file
+                while((n = fis.read(buffer)) > 0){
+                    while(true){
+                        packet = new DatagramPacket(buffer, n, aHost, port);
+                        System.out.println("UDPFileSender - Sent " + packet.getLength() + " bytes");
+                        aSocket.send(packet);
+
+                        //if this thread receives ACK, break this loop and continue sending parts of the file
+                        try{
+                            aSocket.receive(ack);
+                            timeoutCounter = 0;
+                            break;
+                        } catch (IOException e){
+                            System.out.println("UDPFileSender - IO: " + e.getMessage());
+                            timeoutCounter++;
+                            //if the receive operation times out too much times end this thread
+                            if(timeoutCounter > maxTimeouts){
+                                fis.close();
+                                return;
+                            }
+                        }
+
+                    }
+                }
+
+                buffer = createEmptyByteArray(bufSize);
+                packet = new DatagramPacket(buffer, buffer.length, aHost, port);
+                
+                //send empty packet, to signal stop
+                aSocket.send(packet);
+
+
+                packet = new DatagramPacket(buffer, buffer.length);
+                //receive calculated SHA256 Hash from receiver
+                aSocket.receive(packet);
+
+                byte hash[] = checksum(filePath + "\\" + fileName);
+                byte receivedHash[] = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());;
+                
+                //hashs are different
+                if(!Arrays.equals(hash, receivedHash)){
+                    System.out.println("UDPFileSender - File hash different.");
+                    //send wrong signal
+                    ackBuf = new byte[] {(byte) 0xFF};
+                    fileComplete = false;
+                }
+                else{
+                    //send valid signal
+                    ackBuf = new byte[] {(byte) 0xAA};
+                    fileComplete = true;
+                }
+
+                packet = new DatagramPacket(ackBuf, ackBuf.length, aHost, port);
+                //send signal
+                aSocket.send(packet);
+
+                //if the file was transfered correctly break
+                if(fileComplete)
+                    break;
+                System.out.println("UDPFileSender - File incorrectly transfered, going to send it again.");
             }
-
-            buffer = createEmptyByteArray(bufSize);
-            packet = new DatagramPacket(buffer, buffer.length, aHost, port);
-            
-            //send empty packet, to signal stop
-            aSocket.send(packet);
-
-
-            packet = new DatagramPacket(buffer, buffer.length);
-            //receive calculated SHA256 Hash from receiver
-            aSocket.receive(packet);
-
-            byte hash[] = checksum(filePath + "\\" + fileName);
-            byte receivedHash[] = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());;
-            
-            //hashs are different
-            if(!Arrays.equals(hash, receivedHash)){
-                System.out.println("UDPFileSender - File hash different.");
-                //send wrong signal
-                ackBuf = new byte[] {(byte) 0xFF};
-            }
-            else{
-                //send valid signal
-                ackBuf = new byte[] {(byte) 0xAA};
-            }
-
-            packet = new DatagramPacket(ackBuf, ackBuf.length, aHost, port);
-            aSocket.send(packet);
 
 
             System.out.println("UDPFileSender - SOCKET CLOSING");

@@ -33,62 +33,65 @@ public class UDPFileReceiver extends Thread{
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         DatagramPacket ack;
 
-        try {
-            //get filepath and filename
-            aSocket.receive(packet);
-
-            //store file path
-            filePath = new String(packet.getData(), 0, packet.getLength());
-            System.out.println("UDPFileReceiver - Filepath: " + filePath);
-            File newFile = new File(filePath);
-            FileOutputStream fos = new FileOutputStream(newFile);
-
-
-            // send acknowledgement
-            ack = new DatagramPacket(ackBuffer, ackBuffer.length, packet.getAddress(), packet.getPort());
-            aSocket.send(ack);
-
-            while(true){
-                packet = new DatagramPacket(buffer, buffer.length);
-
+        while(true){
+            try {
+                //get filepath and filename
                 aSocket.receive(packet);
-                System.out.println("UDPFileReceiver - Received " + packet.getLength() + " bytes");
 
-                //if packet is empty
-                if(Arrays.equals(packet.getData(), emptyBuffer)){
-                    System.out.println("UDPFileReceiver - Received empty packet.");
+                //store file path
+                filePath = new String(packet.getData(), 0, packet.getLength());
+                System.out.println("UDPFileReceiver - Filepath: " + filePath);
+                File newFile = new File(filePath);
+                FileOutputStream fos = new FileOutputStream(newFile);
+
+
+                // send acknowledgement
+                ack = new DatagramPacket(ackBuffer, ackBuffer.length, packet.getAddress(), packet.getPort());
+                aSocket.send(ack);
+
+                while(true){
+                    packet = new DatagramPacket(buffer, buffer.length);
+
+                    aSocket.receive(packet);
+                    System.out.println("UDPFileReceiver - Received " + packet.getLength() + " bytes");
+
+                    //if packet is empty
+                    if(Arrays.equals(packet.getData(), emptyBuffer)){
+                        System.out.println("UDPFileReceiver - Received empty packet.");
+                        break;
+                    }
+
+
+                    //write data to file
+                    fos.write(packet.getData(), 0, packet.getLength());
+                    aSocket.send(ack);
+                }
+                fos.close();
+
+                //calculate SHA256 hash for the new file
+                byte hash[] = checksum(filePath);
+
+                System.out.println("UDPFileReceiver - Hash: " + Arrays.toString(hash));
+                System.out.println("UDPFileReceiver - Hash size: " + hash.length);
+
+                packet = new DatagramPacket(hash, hash.length, ack.getAddress(), ack.getPort());
+                aSocket.send(packet);
+
+                //receive signal from sender
+                ack = new DatagramPacket(ackBuffer, ackBuffer.length);
+                aSocket.receive(ack);
+
+                if(ack.getData()[0] == (byte)0xAA){
+                    System.out.println("UDPFileReceiver - File correct.");
                     break;
                 }
-
-
-                //write data to file
-                fos.write(packet.getData(), 0, packet.getLength());
-                aSocket.send(ack);
+                else{
+                    System.out.println("UDPFileReceiver - File bad. Going to receive it again.");
+                }
+            } catch (IOException e) {
+                System.out.println("UDPFileReceiver - IO: " + e.getMessage());
+                return;
             }
-            fos.close();
-
-            //calculate SHA256 hash for the new file
-            byte hash[] = checksum(filePath);
-
-            System.out.println("UDPFileReceiver - Hash: " + Arrays.toString(hash));
-            System.out.println("UDPFileReceiver - Hash size: " + hash.length);
-
-            packet = new DatagramPacket(hash, hash.length, ack.getAddress(), ack.getPort());
-            aSocket.send(packet);
-
-            //receive signal from sender
-            ack = new DatagramPacket(ackBuffer, ackBuffer.length);
-            aSocket.receive(ack);
-
-            if(ack.getData()[0] == (byte)0xAA){
-                System.out.println("UDPFileReceiver - File correct.");
-            }
-            else{
-                System.out.println("UDPFileReceiver - File bad.");
-            }
-        } catch (IOException e) {
-            System.out.println("UDPFileReceiver - IO: " + e.getMessage());
-            return;
         }
     }
     
