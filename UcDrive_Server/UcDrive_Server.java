@@ -178,7 +178,8 @@ public class UcDrive_Server {
         }
     }
 
-    private static void saveUsers() {
+    // syncronized method to prevent threads concurrency
+    private static synchronized void saveUsers() {
         try {
             FileOutputStream fos = new FileOutputStream("users.data");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -192,7 +193,8 @@ public class UcDrive_Server {
         }
     }
 
-    private static void loadUsers() {
+    // syncronized method to prevent threads concurrency
+    private static synchronized void loadUsers() {
         try {
             FileInputStream fis = new FileInputStream("users.data");
             ObjectInputStream ois = new ObjectInputStream(fis);

@@ -25,20 +25,22 @@ import java.io.*;
  * the client application
  */
 public class Client {
-    static Scanner sc;
-    static String priServerIp;
-    static String priServerPort;
-    static String secServerIp;
-    static String secServerPort;
-    static Socket s;
-    static ObjectInputStream ois;
-    static ObjectOutputStream oos;
-    static int connectedServer;          // denotates to which server the client is connected (0 = none)
-    static boolean onServerDirectory;
-    static String localDirectory;
-    static String serverDirectory;
+    // class atributes
+    private static Scanner sc;                                  // scanner
+    private static String priServerIp;                          // primary server Ip
+    private static String priServerPort;                        // primary server Port
+    private static String secServerIp;                          // secondary server Ip
+    private static String secServerPort;                        // secondary server Port
+    private static Socket s;                                    // socket that is connected to the primary server
+    private static ObjectInputStream ois;                       // used to read from sockets
+    private static ObjectOutputStream oos;                      // used to write to sockets
+    private static int connectedServer;                         // denotates to which server the client is connected (0 = none)
+    protected static boolean onServerDirectory;                 // indicates wether the client is on the server directory (true) or on his local directory (false)
+    protected static String serverDirectory;                    // string with users' current server directory 
+    protected static String localDirectory;                     // string with users' current local directory 
     //static ClientDownloadHandler dHandler;
 
+    // main function
 	public static void main(String args[]) {
         clearTerminal();
 
@@ -50,6 +52,10 @@ public class Client {
         System.out.println("            \\/        \\/                    \\/");
         System.out.println("\n ucDrive v0.01\n Client Application\n\n====================\n");
 
+
+        /*
+        *   Start by getting each server information
+        */
         sc = new Scanner(System.in);
         connectedServer = 0;
         onServerDirectory = true;
@@ -85,14 +91,20 @@ public class Client {
             return;
         }
 
-        //connect to server
-        if(!connectToServer())
+        /*
+        *   Connect to the current primary server
+        */
+        // connect to server
+        if (!connectToServer())
             return;
 
+        // as soon as the user is connected, ask for authentication
         sendAuthentication();
 
-        menu();
+        // at last, start handling client operations
+        clientOperations();
 
+        // close socket and scanner before exiting
         try {
             s.close();
         } catch (IOException e) {
@@ -101,10 +113,11 @@ public class Client {
         sc.close();
     }
 
-    private static boolean connectToServer(){
+    // method to stablish connection with which ever is the primary server
+    private static boolean connectToServer() {
+        System.out.println("> Retrieving online servers...");
 
-        System.out.println("> Searching online servers...");
-
+        // in case the client was previously already connected to a server but the connection was lost
         if (connectedServer > 0) {
             try {
                 Thread.sleep(5000);
@@ -116,42 +129,43 @@ public class Client {
 
         System.out.println("> Attempting to connect to primary server.");
         try {
-            //attempt to connect to primary server
+            // attempt to connect to primary server
             s = new Socket(priServerIp, Integer.parseInt(priServerPort));
             System.out.println("\n:: Successfully connected to primary server ::");
+
             ois = new ObjectInputStream(s.getInputStream());
             oos = new ObjectOutputStream(s.getOutputStream());
             oos.flush();
             connectedServer = 1;
-        } catch(IOException e){
-            //if there's an error connecting to the primary server
-            System.out.println("> Primary server offline.");
-            System.out.println("> Attempting to connect to secondary server.");
-            
-            try{
-                //attempt to connect to secondary server
+        } catch (IOException e) {
+            // if there's an error connecting to the primary server
+            System.out.println("> Primary server offline.\n> Attempting to connect to secondary server.");
+
+            try {
+                // attempt to connect to secondary server
                 s = new Socket(secServerIp, Integer.parseInt(secServerPort));
                 System.out.println("\n:: Successfully connected to secondary server ::");
+
                 ois = new ObjectInputStream(s.getInputStream());
                 oos = new ObjectOutputStream(s.getOutputStream());
                 oos.flush();
                 connectedServer = 2;
-            } catch(IOException e1){
-                //there's an error connecting to the secondary server
-                //no servers online
-                System.out.println("> Secondary server offline.");
-                System.err.println("> No server online.");
+            } catch (IOException e1) {
+                // there's an error connecting to the secondary server
+                // no servers online
+                System.out.println("> Secondary server offline.\n> No server online, exiting.");
                 return false;
             }
         }
         return true;
     }
 
+    // user authentication method
     private static void sendAuthentication(){
-        // TODO: make so that once user can only be logged in one device at a time?
+        // TODO: make so that an user can only be logged in one device at a time?
         // authentication loop
         while (true) {
-            try{
+            try {
                 // READ STRING FROM KEYBOARD
                 System.out.print("> Username: "); 
                 String username = sc.nextLine();
@@ -159,42 +173,50 @@ public class Client {
                 System.out.print("> Password: "); 
                 String password = sc.nextLine();
 
+                // create client auth object that will be verified by the server
                 ClientAuth auth = new ClientAuth(username, password);
 
-                //send authentication data to server
+                // send authentication data to server
                 oos.writeObject(auth);
 
-                //server answers with boolean saying if client is authenticated or not
-                if(ois.readBoolean()){
+                // server answers with boolean saying if client is authenticated or not
+                if (ois.readBoolean()) {
                     System.out.println("> Logged in as: " + username + "\n");
                     break;
                 }
-                else{
+                else {
                     System.out.println("> Invalid username/password.");
                 }
             } catch (IOException e) {
-                //there's an error with the server, try to connect again
                 System.out.println("IO: " + e.getMessage());
-                connectToServer();
+                
+                // try to reconnect to server
+                if(!connectToServer())
+                    return;
             }
         }
     }
 
-    private static void menu() {
+    // client operations handler function
+    private static void clientOperations() {
         String[] opt;
         String response;
         File file;
+
         while (true) {
-            try{    
-                if(onServerDirectory){
+            try {
+                // we only need to request the server directory, local directory is handled by the client
+                if (onServerDirectory) {
                     serverDirectory = ois.readUTF();
                     System.out.print("(Server) " + serverDirectory + ">");
                 }
-                else{
+                else {
                     System.out.print("(Local) " + localDirectory + ">");
                 }
 
+                // get user commands
                 opt = sc.nextLine().split(" ");
+
                 // in case user enters the string " " for example
                 if(opt.length == 0) {
                     oos.writeUTF("error");
@@ -202,21 +224,21 @@ public class Client {
                     continue;
                 }
 
-                switch(opt[0]){
+                switch (opt[0]) {
                     // list directory
                     case "ls":
-                        if(onServerDirectory){
+                        if (onServerDirectory) {
                             oos.writeUTF("ls");
                             oos.flush();
                             System.out.println(ois.readUTF());
                         }
-                        else{
+                        else {
                             System.out.println(getFileList());
                         }
                         break;
                     // change directory
                     case "cd":
-                        if(onServerDirectory){
+                        if (onServerDirectory) {
                             if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 oos.writeUTF("error");
@@ -227,11 +249,11 @@ public class Client {
                             oos.writeUTF("cd " + joinString(opt));
                             oos.flush();
                             response = ois.readUTF();
-                            if(!response.equals(""))
+                            if (!response.equals(""))
                                 System.out.println(response);
                         }
-                        else{
-                            if(opt.length < 2){
+                        else {
+                            if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 break;
                             }
@@ -240,7 +262,7 @@ public class Client {
                         break;
                     // make directory
                     case "mkdir":
-                        if(onServerDirectory){
+                        if (onServerDirectory) {
                             if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 oos.writeUTF("error");
@@ -254,8 +276,8 @@ public class Client {
                             if(!response.equals(""))
                                 System.out.println(response);
                         }
-                        else{
-                            if(opt.length < 2){
+                        else {
+                            if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 break;
                             }
@@ -264,7 +286,7 @@ public class Client {
                         break;
                     // remove directory
                     case "rm":
-                        if(onServerDirectory){
+                        if (onServerDirectory) {
                             if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 oos.writeUTF("error");
@@ -275,7 +297,7 @@ public class Client {
                             System.out.print("> Are you sure you want to try to remove \"" + joinString(opt) + "\" directory? ");
                             String ans = sc.nextLine();
                             // abort rm
-                            if(!ans.equals("yes") && !ans.equals("y")){
+                            if (!ans.equals("yes") && !ans.equals("y")) {
                                 System.out.println("> Remove cancelled.");
                                 oos.writeUTF("dir");
                                 oos.flush();
@@ -286,11 +308,11 @@ public class Client {
                             oos.writeUTF("rm " + joinString(opt));
                             oos.flush();
                             response = ois.readUTF();
-                            if(!response.equals(""))
+                            if (!response.equals(""))
                                 System.out.println(response);
                         }
-                        else{
-                            if(opt.length < 2){
+                        else {
+                            if (opt.length < 2) {
                                 System.out.println("> Too few arguments.");
                                 break;
                             }
@@ -298,7 +320,7 @@ public class Client {
                             System.out.print("> Are you sure you want to try to remove \"" + joinString(opt) + "\" directory? ");
                             String ans = sc.nextLine();
                             // abort rm
-                            if(!ans.equals("yes") && !ans.equals("y")){
+                            if (!ans.equals("yes") && !ans.equals("y")) {
                                 System.out.println("> Remove cancelled.");
                                 break;
                             }
@@ -306,7 +328,7 @@ public class Client {
                             // the desired directory can be a folder named "new folder", so we need to join
                             file = new File(localDirectory + "\\" + joinString(opt));
                             // directory not found
-                            if(file.exists() == false){
+                            if (file.exists() == false) {
                                 System.out.println("> Directory not found.");
                                 break;
                             }
@@ -333,7 +355,7 @@ public class Client {
                         return;
                     // clear console
                     case "dw":
-                        if(!onServerDirectory){
+                        if (!onServerDirectory) {
                             System.out.println("> Cannot download from local directory.");
                             break;
                         }
@@ -349,7 +371,7 @@ public class Client {
                         
                         //check if server found the file
                         String res = ois.readUTF();
-                        if(!res.equals("dw_start")){
+                        if (!res.equals("dw_start")) {
                             System.out.println(res);
                             break;
                         }
@@ -372,19 +394,19 @@ public class Client {
 
                         //server found the file and is now sending the port
                         int port = ois.readInt();
-                        if(port == -1){
+                        if (port == -1) {
                             System.out.println("> Error: Cannot download file.");
                             break;
                         }
 
-                        if(connectedServer == 1)
+                        if (connectedServer == 1)
                             new ClientDownloadHandler(priServerIp, port, localDirectory);
                         else if (connectedServer == 2)
                             new ClientDownloadHandler(secServerIp, port, localDirectory);
 
                         break;
                     case "up":
-                        if(onServerDirectory){
+                        if (onServerDirectory) {
                             System.out.println("> Cannot upload from server directory.");
                             oos.writeUTF("error");
                             oos.flush();
@@ -396,12 +418,12 @@ public class Client {
                         }
                         file = new File(localDirectory + "\\" + joinString(opt));
                         // directory not found
-                        if(file.exists() == false){
+                        if (file.exists() == false) {
                             System.out.println("> Directory not found.");
                             break;
                         }
                         // directory is not a file
-                        if(!file.isFile()){
+                        if (!file.isFile()) {
                             System.out.println("> Directory is not a file.");
                             break;
                         }
@@ -432,14 +454,14 @@ public class Client {
 
                         //server is sending the port
                         int up_port = ois.readInt();
-                        if(up_port == -1){
+                        if (up_port == -1) {
                             System.out.println("> Error: Cannot download file.");
                             // we need to make a read in order to empty oos
                             ois.readUTF();
                             break;
                         }
 
-                        if(connectedServer == 1)
+                        if (connectedServer == 1)
                             new ClientUploadHandler(priServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         else if (connectedServer == 2)
                             new ClientUploadHandler(secServerIp, up_port, localDirectory + "\\" + joinString(opt));
@@ -463,7 +485,7 @@ public class Client {
                         return;
                     // change between local and server directories
                     case "ch":
-                        if(onServerDirectory == false){
+                        if (onServerDirectory == false) {
                             oos.writeUTF("dir");
                             oos.flush();
                         }
@@ -472,22 +494,22 @@ public class Client {
                     // ignore empty input
                     // TODO: if user inputs a string starting with spaces and has letters in the middle, it should print "command not found"
                     case "":
-                        if (onServerDirectory){
+                        if (onServerDirectory) {
                             oos.writeUTF("dir");
                             oos.flush();
                         }
                         break;
                     default:
                         System.out.println("> Command not found.");
-                        if (onServerDirectory){
+                        if (onServerDirectory) {
                             oos.writeUTF("error");
                             oos.flush();
                         }
                         break;
                 }
-            } catch(IOException e){
-                //try to connect to server
-                if(!connectToServer())
+            } catch (IOException e) {
+                //try to reconnect to server
+                if (!connectToServer())
                     return;
 
                 sendAuthentication();
@@ -497,32 +519,30 @@ public class Client {
         }
     }
 
-    private static String getFileList(){
+    private static String getFileList() {
         File f = new File(localDirectory);
         String files[] = f.list();
         String ls = "";
-        for(String s : files){
+        for (String s : files) {
             ls += s;
             ls += "  ";
         }
         return ls;
     }
 
-    private static String changeDirectory(String path){
-
-        if(path.equals("..")){
+    private static String changeDirectory(String path) {
+        if (path.equals("..")) {
             String directoryList[] = localDirectory.split("\\\\");
 
             //restrict to home path
-            if(directoryList.length < 3){
+            if (directoryList.length < 3)
                 return "> Cannot leave home folder.";
-            }
 
             //create new path without hte last "/" -> "Users/asd" to "Users"
             String newPath = "";
-            for(int i = 0; i < directoryList.length - 1; i++){
+            for (int i = 0; i < directoryList.length - 1; i++) {
                 newPath += directoryList[i];
-                if(i != directoryList.length - 2)
+                if (i != directoryList.length - 2)
                     newPath += "\\";
             }
 
@@ -534,14 +554,14 @@ public class Client {
         File files[] = f.listFiles();
 
         //check if directory exists
-        for(File file : files){
+        for (File file : files) {
             //file.tostring will return a path like "Users\alex\asd", we want only "asd"
             String fileNames[] = file.toString().split("\\\\");
             String fileName = fileNames[fileNames.length-1];
 
             //checks if the path is directory and if the name equals the desired path
-            if(fileName.equals(path)){
-                if(file.isDirectory()){
+            if (fileName.equals(path)) {
+                if (file.isDirectory()) {
                     localDirectory = localDirectory + "\\" + path;
                     return "";
                 }
@@ -554,10 +574,10 @@ public class Client {
         return "> Invalid path.";
     }
 
-    private static String createDirectory(String dirName){
+    private static String createDirectory(String dirName) {
         File f = new File(localDirectory + "\\" + dirName);
         //System.out.println("Dir: " + f);
-        if(f.exists() == false){
+        if (f.exists() == false) {
             f.mkdirs();
             // change user to created directory
             changeDirectory(dirName);
@@ -576,23 +596,23 @@ public class Client {
                 }
             }
         }
-        if (!file.delete()){
+        if (!file.delete()) {
             System.out.println("> Could not delete file \"" + file + "\".");
         }
     }
     
     // this will remove the first index!!!!
-    private static String joinString(String array[]){
+    private static String joinString(String array[]) {
         String str = "";
-        for(int i = 1; i < array.length; i++){
+        for (int i = 1; i < array.length; i++) {
             str += array[i];
-            if(i != array.length - 1)
+            if (i != array.length - 1)
                 str += " ";
         }
         return str;
     }
 
-    private static void clearTerminal(){
+    private static void clearTerminal() {
         try {
             new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
         } catch (InterruptedException e) {
