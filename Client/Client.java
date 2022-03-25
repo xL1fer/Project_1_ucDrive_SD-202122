@@ -199,10 +199,11 @@ public class Client {
 
     // client operations handler function
     private static void clientOperations() {
-        String[] opt;
-        String response;
-        File file;
+        String[] opt;           // input split string
+        String response;        // server response
+        File file;              // file object used to instantiate files
 
+        // our main loop
         while (true) {
             try {
                 // we only need to request the server directory, local directory is handled by the client
@@ -304,7 +305,7 @@ public class Client {
                                 break;
                             }
 
-                            // the desired directory can be a folder named "new folder", so we need to join
+                            // the desired directory can be a folder named "new folder", so we need to join the string
                             oos.writeUTF("rm " + joinString(opt));
                             oos.flush();
                             response = ois.readUTF();
@@ -348,10 +349,14 @@ public class Client {
                             }
                             break;
                         }
+
                         oos.writeUTF("pw " + opt[1]);
                         oos.flush();
                         response = ois.readUTF();
                         System.out.println(response);
+
+                        // in case the password is changed we want to stop the application in order to force the client to authenticate again
+                        // this could also be done by calling "sendAuthentication()" so that the client wouldnt need to restart the app
                         return;
                     // clear console
                     case "dw":
@@ -399,6 +404,7 @@ public class Client {
                             break;
                         }
 
+                        // check from which server we are downloading the file
                         if (connectedServer == 1)
                             new ClientDownloadHandler(priServerIp, port, localDirectory);
                         else if (connectedServer == 2)
@@ -417,6 +423,7 @@ public class Client {
                             break;
                         }
                         file = new File(localDirectory + "\\" + joinString(opt));
+
                         // directory not found
                         if (file.exists() == false) {
                             System.out.println("> Directory not found.");
@@ -443,7 +450,7 @@ public class Client {
                                 oos.writeUTF("dir");
                                 oos.flush();
 
-                                // we need to make a read in order to empty oos
+                                // make a read in order to empty oos
                                 ois.readUTF();
 
                                 break;
@@ -456,17 +463,20 @@ public class Client {
                         int up_port = ois.readInt();
                         if (up_port == -1) {
                             System.out.println("> Error: Cannot download file.");
-                            // we need to make a read in order to empty oos
+
+                            // make a read in order to empty oos
                             ois.readUTF();
+
                             break;
                         }
 
+                        // check to which server we are uploading the file
                         if (connectedServer == 1)
                             new ClientUploadHandler(priServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         else if (connectedServer == 2)
                             new ClientUploadHandler(secServerIp, up_port, localDirectory + "\\" + joinString(opt));
                         
-                        // we need to make a read in order to empty oos
+                        // make a read in order to empty oos
                         ois.readUTF();
 
                         break;
@@ -508,17 +518,20 @@ public class Client {
                         break;
                 }
             } catch (IOException e) {
-                //try to reconnect to server
+                // try to reconnect to server
                 if (!connectToServer())
                     return;
 
+                // re-send authentication
                 sendAuthentication();
+
                 // reset directory to server directory
                 onServerDirectory = true;
             }
         }
     }
 
+    // method to get all files from a given directory (will always be localDirectory in this case)
     private static String getFileList() {
         File f = new File(localDirectory);
         String files[] = f.list();
@@ -530,15 +543,16 @@ public class Client {
         return ls;
     }
 
+    // change current directory 
     private static String changeDirectory(String path) {
         if (path.equals("..")) {
             String directoryList[] = localDirectory.split("\\\\");
 
-            //restrict to home path
+            // restrict to home path
             if (directoryList.length < 3)
                 return "> Cannot leave home folder.";
 
-            //create new path without hte last "/" -> "Users/asd" to "Users"
+            // create new path without the last "/" -> "Users/my_folder" to "Users"
             String newPath = "";
             for (int i = 0; i < directoryList.length - 1; i++) {
                 newPath += directoryList[i];
@@ -553,19 +567,19 @@ public class Client {
         File f = new File(localDirectory);
         File files[] = f.listFiles();
 
-        //check if directory exists
+        // check if directory exists
         for (File file : files) {
-            //file.tostring will return a path like "Users\alex\asd", we want only "asd"
+            // file.toString() will return a path like "Users\alex\my_folder", we only want "my_folder"
             String fileNames[] = file.toString().split("\\\\");
             String fileName = fileNames[fileNames.length-1];
 
-            //checks if the path is directory and if the name equals the desired path
+            // checks if the path is directory and if the name equals the desired path
             if (fileName.equals(path)) {
                 if (file.isDirectory()) {
                     localDirectory = localDirectory + "\\" + path;
                     return "";
                 }
-                //found file with that name
+                // found file with the suposed "directory" name
                 else
                     return "> Specified path is not a directory.";
             }
@@ -574,12 +588,13 @@ public class Client {
         return "> Invalid path.";
     }
 
+    // function to create a directory
     private static String createDirectory(String dirName) {
         File f = new File(localDirectory + "\\" + dirName);
         //System.out.println("Dir: " + f);
         if (f.exists() == false) {
             f.mkdirs();
-            // change user to created directory
+            // change user path to created directory
             changeDirectory(dirName);
             return "";
             //return "> Directory \"" + dirName + "\" created.";
@@ -587,6 +602,7 @@ public class Client {
         return "> Directory already exists.";
     }
 
+    // delete a file or all files within a folder
     private static void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -601,7 +617,7 @@ public class Client {
         }
     }
     
-    // this will remove the first index!!!!
+    // method to join a string array except the first element
     private static String joinString(String array[]) {
         String str = "";
         for (int i = 1; i < array.length; i++) {
@@ -612,6 +628,7 @@ public class Client {
         return str;
     }
 
+    // clear terminal function (may only work on windows)
     private static void clearTerminal() {
         try {
             new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
