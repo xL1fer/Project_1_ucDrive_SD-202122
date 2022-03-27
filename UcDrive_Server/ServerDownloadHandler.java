@@ -56,8 +56,9 @@ public class ServerDownloadHandler extends Thread{
         //System.out.println("Up removing unused port");
         //UcDrive_Server.ports.remove(Integer.valueOf(port));
 
-        //send files to secondary server
-        UDPPortManager udpPortSender = new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, filePath, fileName);
+        // TODO: send files to secondary server
+
+        UDPPortManager udpPortSender = new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, filePath, fileName, 1);
 
         return;
 

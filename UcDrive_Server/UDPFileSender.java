@@ -69,12 +69,13 @@ public class UDPFileSender extends Thread{
                     }
                 }
 
+                buffer = new byte[bufSize];
                 int n;
                 //send file
                 while((n = fis.read(buffer)) > 0){
                     while(true){
                         packet = new DatagramPacket(buffer, n, aHost, port);
-                        System.out.println("UDPFileSender - Sent " + packet.getLength() + " bytes");
+                        System.out.println("UDPFileSender - Sent " + n + " bytes");
                         aSocket.send(packet);
 
                         //if this thread receives ACK, break this loop and continue sending parts of the file

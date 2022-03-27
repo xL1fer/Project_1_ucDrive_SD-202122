@@ -28,6 +28,11 @@ public class UDPHeartbeat extends Thread{
                 buffer[0] = (byte)0xAA;	
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 aSocket.receive(request);
+
+                if(UcDrive_Server.otherServerUp == false){
+                    //UcDrive_Server.transferFiles()
+                }
+
                 UcDrive_Server.otherServerUp = true;
 
                 DatagramPacket reply = new DatagramPacket(buffer, 
