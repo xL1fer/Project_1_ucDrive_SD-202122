@@ -1,31 +1,51 @@
+/*
+ *  "UDPPortManager.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
 import java.util.ArrayList;
 
-public class UDPPortManager extends Thread{
+/**
+ * Class to open ports for file replication
+ * (fail over)
+ */
+public class UDPPortManager extends Thread {
     private DatagramSocket aSocket;
     private String otherServerIp; 
     private int port;
     private boolean isPrimary;
     protected static ArrayList<FileTransferType> filesToTransfer = new ArrayList<>();
-
     private static int maxTimeouts = 5;
     private static int timeout = 2000;
 
-    public UDPPortManager(String otherServerIp, int port, boolean isPrimary){
+    public UDPPortManager(String otherServerIp, int port, boolean isPrimary) {
         this.otherServerIp = otherServerIp;
         this.port = port;
         this.isPrimary = isPrimary;
-        if(this.isPrimary && !UcDrive_Server.otherServerUp){
-            System.out.println("UDPPortManager(Primary) - Cannot replicate file because other server is down.");
+        if (this.isPrimary && !UcDriveServer.otherServerUp) {
+            System.out.println("<UDPPortManager> (Primary): Cannot replicate file because secondary server is down");
             return;
         }
 
         start();
     }
 
-    public void run(){
+    public void run() {
         int availablePort;
         byte buffer[] = new byte[4];
         DatagramPacket packet;
@@ -36,28 +56,28 @@ public class UDPPortManager extends Thread{
         DataOutputStream dos;
         String dir;
 
-        if(isPrimary){
+        if (isPrimary) {
             emptyQueue();
         }
-        else{
+        else {
             System.out.println( System.getProperty("user.dir"));
-            //receive port for communication
+            // receive port for communication
             packet = new DatagramPacket(buffer, buffer.length);
 
-            byte[] pathBuffer = new byte[100];
+            byte pathBuffer[] = new byte[100];
             DatagramPacket pathPacket = new DatagramPacket(pathBuffer, pathBuffer.length);
             int opt;
-            try{
+            try {
                 aSocket = new DatagramSocket(port);
-                System.out.println("Opened UDP socket for listening.");
+                //System.out.println("<UDPPortManager> (Secondary): Opened UDP socket for listening.");
                 aSocket.setSoTimeout(timeout);
             } catch (SocketException e) {
-                System.out.println("Socket: " + e.getMessage());
+                System.out.println("<UDPPortManager> (Secondary) Socket: " + e.getMessage());
                 return;
             }
 
-            while(true){
-                try{
+            while (true) {
+                try {
                     aSocket.receive(packet);
                     sendAcknowledgement(packet);
 
@@ -66,16 +86,16 @@ public class UDPPortManager extends Thread{
 
                     opt = dis.readInt();
 
-                    //primary server wants to send a file
-                    switch(opt){
-                        //primary server wants to send a file
+                    // primary server wants to send a file
+                    switch (opt) {
+                        // primary server wants to send a file
                         case 1:
                             availablePort = getAvailablePort();
-                            System.out.println("Available Port: " + availablePort);
-                            if(availablePort < 0){
-                                System.out.println("UDPPortManager (Secondary) - Invalid available port.");
+                            //System.out.println("<UDPPortManager> (Secondary) Available Port: " + availablePort);
+                            if (availablePort < 0) {
+                                System.out.println("<UDPPortManager> (Secondary): Invalid available port");
                             }
-                            //convert int to byte array
+                            // convert int to byte array
                             baos = new ByteArrayOutputStream();
                             dos = new DataOutputStream(baos);
                             dos.writeInt(availablePort);
@@ -84,36 +104,36 @@ public class UDPPortManager extends Thread{
                             buffer = baos.toByteArray();
 
                             reply = new DatagramPacket(buffer, buffer.length, packet.getAddress(), packet.getPort());
-                            while(true){
-                                //send available port
+                            while (true) {
+                                // send available port
                                 aSocket.send(reply);
-                                try{
-                                    //wait for acknowledgement
+                                try {
+                                    // wait for acknowledgement
                                     aSocket.receive(packet);
                                     break;
-                                } catch(IOException e){
-                                    System.out.println("UDPPortManager (Secondary) - Opt 1 ACK receive timeout.");
+                                } catch(IOException e) {
+                                    System.out.println("<UDPPortManager> (Secondary): Opt 1 ACK receive timeout.");
                                 }
                             }
 
-                            //create thread to receive the file
+                            // create thread to receive the file
                             new UDPFileReceiver(availablePort);
-                            System.out.println("<UDPPortManager> Received file");
+                            System.out.println("<UDPPortManager> (Secondary): Received file");
 
                             break;
-                        //primary server wants to create a directory
+                        // primary server wants to create a directory
                         case 2:
-                            //receive directory to create
+                            // receive directory to create
                             aSocket.receive(pathPacket);
                             sendAcknowledgement(packet);
 
                             dir = new String(pathPacket.getData(), 0, pathPacket.getLength());
 
                             createDirectory(dir);
-                            System.out.println("<UDPPortManager> Created directory");
+                            System.out.println("<UDPPortManager> (Secondary): Created directory");
 
                             break;
-                        //primary server wants to delete a directory/file
+                        // primary server wants to delete a directory/file
                         case 3:
                             // receive directory to delete
                             aSocket.receive(pathPacket);
@@ -123,18 +143,18 @@ public class UDPPortManager extends Thread{
 
                             File file = new File(dir);
                             deleteDir(file);
-                            System.out.println("<UDPPortManager> Deleted directory");
+                            System.out.println("<UDPPortManager> (Secondary): Deleted directory");
                             
                             break;
                         default:
-                            System.out.println("UDPPortManager (Secondary) - Bad option in switch case.");
+                            System.out.println("<UDPPortManager> (Secondary): Bad option in switch case");
                             break;
                     }
                     
-                } catch(IOException e){
+                } catch(IOException e) {
                     //System.out.println("IO: " + e.getMessage());
-                    if(interrupted()){
-                        System.out.println("UDPPortManager (Secondary) - Thread interrupted.");
+                    if (interrupted()) {
+                        System.out.println("<UDPPortManager> (Secondary): Thread interrupted");
                         aSocket.close();
                         return;
                     }     
@@ -152,11 +172,11 @@ public class UDPPortManager extends Thread{
 
         //open socket for communicating
         packet = new DatagramPacket(buffer, buffer.length);
-        try{
+        try {
             this.aSocket = new DatagramSocket();
             this.aSocket.setSoTimeout(timeout);
         } catch (SocketException e) {
-            System.out.println("Socket: " + e.getMessage());
+            System.out.println("<UDPPortManager> (Primary) Socket: " + e.getMessage());
             return;
         }
 
@@ -164,33 +184,31 @@ public class UDPPortManager extends Thread{
         DatagramPacket path;
 
         while (filesToTransfer.size() > 0) {
-
             FileTransferType file =  filesToTransfer.get(0);
             filesToTransfer.remove(0);
 
-            System.out.println("<PortManager> Sending file with option: " + file.getOpt() + " with path: " + file.getFilePath() + " and name: " + file.getFileName() + ".");
-
-            try{
-                switch(file.getOpt()){
-                    //send file to secondary, but first receive port
+            //System.out.println("<UDPPortManager> (Primary) Sending file with option: " + file.getOpt() + " with path: " + file.getFilePath() + " and name: " + file.getFileName() + ".");
+            try {
+                switch (file.getOpt()) {
+                    // send file to secondary, but first receive port
                     case 1:
                         sendOpt(file.getOpt());
 
-                        //receive acknowledgement
+                        // receive acknowledgement
                         aSocket.receive(packet);
 
-                        //receive port
+                        // receive port
                         aSocket.receive(packet);
 
                         sendAcknowledgement(packet);
 
-                        //byte array to int
+                        // byte array to int
                         bais = new ByteArrayInputStream(packet.getData());
                         dis = new DataInputStream(bais);
 
                         availablePort = dis.readInt();
 
-                        System.out.println("Available Port: " + availablePort);
+                        //System.out.println("<UDPPortManager> (Primary) Available Port: " + availablePort);
 
                         new UDPFileSender(otherServerIp, availablePort, file.getFilePath(), file.getFileName());
 
@@ -200,24 +218,24 @@ public class UDPPortManager extends Thread{
                     case 3:
                         sendOpt(file.getOpt());
 
-                        //receive acknowledgement
+                        // receive acknowledgement
                         aSocket.receive(packet);
 
                         pathBuffer = file.getFilePath().getBytes();
                         path = new DatagramPacket(pathBuffer, pathBuffer.length, packet.getAddress(), packet.getPort());
                         aSocket.send(path);
 
-                        //receive acknowledgement
+                        // receive acknowledgement
                         aSocket.receive(packet);
                         break;
 
                     default:
-                        System.out.println("UDPPortManager (Primary) - Bad option in switch case.");
+                        System.out.println("<UDPPortManager> (Primary): Bad option in switch case");
                         break;
                 }
 
-            } catch(IOException e){
-                System.out.println("IO: " + e.getMessage());
+            } catch(IOException e) {
+                System.out.println("<UDPPortManager> (Primary) IO: " + e.getMessage());
                 return;
             }
             
@@ -225,13 +243,13 @@ public class UDPPortManager extends Thread{
 
     }
 
-    private void createDirectory(String newDir){
+    private void createDirectory(String newDir) {
         //System.out.println("DirName: " + newDir);
         File f = new File(newDir);
 
-        System.out.println("UDPPortManager (Secondary) - Dir: " + f);
-        if(f.exists() == false){
-            System.out.println("UDPPortManager (Secondary) - Dir doesn't exist, gonna create it.");
+        //System.out.println("<UDPPortManager> (Primary): Dir: " + f);
+        if (f.exists() == false) {
+            System.out.println("<UDPPortManager> (Secondary): Directory created");
             f.mkdirs();
         }
     }
@@ -245,45 +263,44 @@ public class UDPPortManager extends Thread{
                 }
             }
         }
-        if (!file.delete()){
-            System.out.println("> Could not delete file \"" + file + "\".");
-        }
+        if (!file.delete())
+            System.out.println("<UDPPortManager> (Secondary): Could not delete file \"" + file + "\".");
     }
 
-    private int getAvailablePort(){
+    private int getAvailablePort() {
         DatagramSocket bSocket;
         int availablePort;
         //find available port
-        try{
+        try {
             bSocket = new DatagramSocket(0);
             availablePort = bSocket.getLocalPort();
             bSocket.close();
-        } catch(SocketException e){
-            System.out.println("Socket: " + e.getMessage());
+        } catch(SocketException e) {
+            System.out.println("<UDPPortManager> Socket: " + e.getMessage());
             return -1;
         }
         return availablePort;
     }
 
     //sends acknowledgement to host that send packet replyTo
-    private void sendAcknowledgement(DatagramPacket replyTo){
+    private void sendAcknowledgement(DatagramPacket replyTo) {
         byte buffer[];
         
         //send acknowledgement
         buffer = new byte[] {(byte) 0xAA};
         DatagramPacket reply = new DatagramPacket(buffer, buffer.length, replyTo.getAddress(), replyTo.getPort());
-        try{
+        try {
             aSocket.send(reply);
-        } catch(IOException e){
-            System.out.println("UDPPortManager - " + e.getMessage());
+        } catch(IOException e) {
+            System.out.println("<UDPPortManager> IO: " + e.getMessage());
         }
     }
 
-    private void sendOpt(int opt){
+    private void sendOpt(int opt) {
         //convert int to byte array
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        try{
+        try {
             dos.writeInt(opt);
             dos.flush();
             dos.close();
@@ -293,8 +310,8 @@ public class UDPPortManager extends Thread{
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, aHost, port);
             //send opt to secondary server
             aSocket.send(packet);
-        } catch(IOException e){
-            System.out.println("UDPPortManager (Primary) - " + e.getMessage());
+        } catch(IOException e) {
+            System.out.println("<UDPPortManager> (Primary) IO: " + e.getMessage());
             return;
         }
     }

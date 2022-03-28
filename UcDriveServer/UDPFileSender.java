@@ -1,9 +1,29 @@
+/*
+ *  "UDPFileSender.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.Arrays;
 
-public class UDPFileSender extends Thread{
+/**
+ * File replicate sender class
+ */
+public class UDPFileSender extends Thread {
     private String filePath;
     private String fileName;
     private String receiverIp;
@@ -14,7 +34,7 @@ public class UDPFileSender extends Thread{
     private static int timeout = 3000;
     private static int bufSize = 8192;
 
-    public UDPFileSender(String receiverIp, int port, String filePath, String fileName){
+    public UDPFileSender(String receiverIp, int port, String filePath, String fileName) {
         this.filePath = filePath;
         this.fileName = fileName;
         this.receiverIp = receiverIp;
@@ -23,14 +43,14 @@ public class UDPFileSender extends Thread{
         this.start();
     }
 
-    public void run(){
+    public void run() {
         int timeoutCounter = 0;
         boolean fileComplete;
-        try{
+        try {
             aSocket = new DatagramSocket();
             aSocket.setSoTimeout(timeout);
         } catch (SocketException e) {
-            System.out.println("UDPFileSender - Socket: " + e.getMessage());
+            System.out.println("<UDPFileSender> Socket: " + e.getMessage());
             return;
         }
 
@@ -47,21 +67,21 @@ public class UDPFileSender extends Thread{
             DatagramPacket ack = new DatagramPacket(ackBuf, ackBuf.length);
 
 
-            while(true){
-                //send file name
+            while (true) {
+                // send file name
                 buffer = (filePath + "\\" + fileName).getBytes();
                 packet = new DatagramPacket(buffer, buffer.length, aHost, port);
-                while(true){
+                while (true) {
                     aSocket.send(packet);
-                    try{
+                    try {
                         aSocket.receive(ack);
                         timeoutCounter = 0;
                         break;
-                    } catch (IOException e){
-                        System.out.println("UDPFileSender - IO: " + e.getMessage());
+                    } catch (IOException e) {
+                        System.out.println("<UDPFileSender> IO: " + e.getMessage());
                         timeoutCounter++;
-                        //if the receive operation times out too much times end this thread
-                        if(timeoutCounter > maxTimeouts){
+                        // if the receive operation times out too much times end this thread
+                        if (timeoutCounter > maxTimeouts) {
                             fis.close();
                             return;
                         }
@@ -70,23 +90,23 @@ public class UDPFileSender extends Thread{
 
                 buffer = new byte[bufSize];
                 int n;
-                //send file
-                while((n = fis.read(buffer)) > 0){
-                    while(true){
+                // send file
+                while ((n = fis.read(buffer)) > 0) {
+                    while (true) {
                         packet = new DatagramPacket(buffer, n, aHost, port);
-                        System.out.println("UDPFileSender - Sent " + n + " bytes");
+                        //System.out.println("<UDPFileSender> Sent " + n + " bytes");
                         aSocket.send(packet);
 
-                        //if this thread receives ACK, break this loop and continue sending parts of the file
-                        try{
+                        // if this thread receives ACK, break this loop and continue sending parts of the file
+                        try {
                             aSocket.receive(ack);
                             timeoutCounter = 0;
                             break;
-                        } catch (IOException e){
-                            System.out.println("UDPFileSender - IO: " + e.getMessage());
+                        } catch (IOException e) {
+                            System.out.println("<UDPFileSender> IO: " + e.getMessage());
                             timeoutCounter++;
-                            //if the receive operation times out too much times end this thread
-                            if(timeoutCounter > maxTimeouts){
+                            // if the receive operation times out too much times end this thread
+                            if (timeoutCounter > maxTimeouts) {
                                 fis.close();
                                 return;
                             }
@@ -98,53 +118,52 @@ public class UDPFileSender extends Thread{
                 buffer = createEmptyByteArray(bufSize);
                 packet = new DatagramPacket(buffer, buffer.length, aHost, port);
                 
-                //send empty packet, to signal stop
+                // send empty packet, to signal stop
                 aSocket.send(packet);
 
-
                 packet = new DatagramPacket(buffer, buffer.length);
-                //receive calculated SHA256 Hash from receiver
+                // receive calculated SHA256 Hash from receiver
                 aSocket.receive(packet);
 
                 byte hash[] = checksum(filePath + "\\" + fileName);
                 byte receivedHash[] = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());;
                 
-                //hashs are different
-                if(!Arrays.equals(hash, receivedHash)){
-                    System.out.println("UDPFileSender - File hash different.");
+                // hashs are different
+                if (!Arrays.equals(hash, receivedHash)) {
+                    //System.out.println("<UDPFileSender> File hash different.");
                     //send wrong signal
                     ackBuf = new byte[] {(byte) 0xFF};
                     fileComplete = false;
                 }
-                else{
-                    //send valid signal
+                else {
+                    // send valid signal
                     ackBuf = new byte[] {(byte) 0xAA};
                     fileComplete = true;
                 }
 
                 packet = new DatagramPacket(ackBuf, ackBuf.length, aHost, port);
-                //send signal
+                // send signal
                 aSocket.send(packet);
 
-                //if the file was transfered correctly break
-                if(fileComplete)
+                // if the file was transfered correctly break
+                if (fileComplete)
                     break;
-                System.out.println("UDPFileSender - File incorrectly transfered, going to send it again.");
+                System.out.println("<UDPFileSender> File incorrectly transfered, retrying");
             }
 
 
-            System.out.println("UDPFileSender - SOCKET CLOSING");
+            //System.out.println("<UDPFileSender> SOCKET CLOSING");
             aSocket.close();
             fis.close();
         } catch (IOException e) {
-            System.out.println("UDPFileSender - IO: " + e.getMessage());
+            System.out.println("<UDPFileSender> IO: " + e.getMessage());
         }
     }
 
-    private byte[] createEmptyByteArray(int arraySize){
+    private byte[] createEmptyByteArray(int arraySize) {
         byte array[] = new byte[arraySize];
 
-        for(int i = 0; i < arraySize; i++){
+        for (int i = 0; i < arraySize; i++) {
             array[i] = 0x00;
         }
 
@@ -152,14 +171,14 @@ public class UDPFileSender extends Thread{
     }
     
     /*
-    Reference: StackOverflow
+    *   Reference: StackOverflow
     */
     private byte[] checksum(String filepath) throws IOException {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("UDPFileSender - NoSuchAlgorithm: " + e.getMessage());
+            System.out.println("<UDPFileSender> NoSuchAlgorithm: " + e.getMessage());
             return null;
         }
         // file hashing with DigestInputStream  

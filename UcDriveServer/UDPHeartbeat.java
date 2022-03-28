@@ -1,50 +1,70 @@
+/*
+ *  "UDPHeartbeat.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 
-public class UDPHeartbeat extends Thread{
-    private String serverIp;
+/**
+ * Heartbeat class (for primary server)
+ */
+public class UDPHeartbeat extends Thread {
+    //private String serverIp;
     private int port;
     private DatagramSocket aSocket;
     private int heartbeatDelay;
 
-    public UDPHeartbeat(String serverIp, int port, int heartbeatDelay){
+    public UDPHeartbeat(String serverIp, int port, int heartbeatDelay) {
         this.serverIp = serverIp;
         this.port = port;
         this.heartbeatDelay = heartbeatDelay - 100;
-        try{
+        try {
 			this.aSocket = new DatagramSocket(port);
             this.aSocket.setSoTimeout(heartbeatDelay);
 			this.start();
 		} catch (SocketException e) {
-			System.out.println("Socket: " + e.getMessage());
+			System.out.println("<UDPHeartbeat> Socket: " + e.getMessage());
 		}
     }
 
-    public void run(){
+    public void run() {
         System.out.println("\n:: UDP Socket listening on port " + port + " ::");
-        while(true){
-            try{
+        while (true) {
+            try {
                 byte buffer[] = new byte[1];
                 buffer[0] = (byte)0xAA;	
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length);
                 aSocket.receive(request);
 
-                if(UcDrive_Server.otherServerUp == false){
+                if (UcDriveServer.otherServerUp == false) {
                     //UcDrive_Server.replicateFiles()
-                    UcDrive_Server.otherServerUp = true;
-                    UcDrive_Server.replicateFiles(null);
-                    new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
+                    UcDriveServer.otherServerUp = true;
+                    UcDriveServer.replicateFiles(null);
+                    new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
                 }
 
-                UcDrive_Server.otherServerUp = true;
+                UcDriveServer.otherServerUp = true;
 
                 DatagramPacket reply = new DatagramPacket(buffer, 
                 buffer.length, request.getAddress(), request.getPort());
                 aSocket.send(reply);
                 Thread.sleep(heartbeatDelay);
-            } catch(IOException e){
+            } catch(IOException e) {
                 //System.out.println("UDPHeartbeat - IOException: " + e.getMessage());
-                UcDrive_Server.otherServerUp = false;
+                UcDriveServer.otherServerUp = false;
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

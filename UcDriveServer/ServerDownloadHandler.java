@@ -1,14 +1,34 @@
+/*
+ *  "ServerDownloadHandler.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 
-public class ServerDownloadHandler extends Thread{
-    private DataInputStream dis;
-    private String filePath;
-    ServerSocket listenSocket;
-    private int bufSize;
-    private byte buffer[];
+/**
+ * Download server-sided class
+ */
+public class ServerDownloadHandler extends Thread {
+    private DataInputStream dis;            // receive files
+    private String filePath;                // file path
+    private ServerSocket listenSocket;      // socket to receive packets
+    private int bufSize;                    // packet buffer size
+    private byte buffer[];                  // packet buffer
     
-    public ServerDownloadHandler(String filePath){
+    public ServerDownloadHandler(String filePath) {
         this.bufSize = 8192;
         this.buffer = new byte[bufSize];
         this.filePath = filePath;
@@ -18,11 +38,11 @@ public class ServerDownloadHandler extends Thread{
             this.listenSocket = new ServerSocket(0);
             this.start();
         } catch (IOException e) {
-            System.out.println("IO:" + e.getMessage());
+            System.out.println("<ServerDownloadHandler> IO: " + e.getMessage());
         }
     }
 
-    public void run(){
+    public void run() {
         String fileName;
         try {
             System.out.println("\n:: Upload Socket listening on port " + getPort() + " ::");
@@ -38,7 +58,7 @@ public class ServerDownloadHandler extends Thread{
             FileOutputStream fos = new FileOutputStream(newFile);
 
             int n;
-            while((n = dis.read(buffer)) > 0){
+            while ((n = dis.read(buffer)) > 0) {
                 //System.out.println("Read " + n + "B.");
                 fos.write(buffer, 0, n);
             }
@@ -49,21 +69,18 @@ public class ServerDownloadHandler extends Thread{
             clientSocket.close();
             listenSocket.close();
         } catch (IOException e) {
-            System.out.println("IO:" + e.getMessage());
+            System.out.println("<ServerDownloadHandler> IO: " + e.getMessage());
             return;
         }
 
-        //System.out.println("Up removing unused port");
-        //UcDrive_Server.ports.remove(Integer.valueOf(port));
-
         //send files to secondary server
         UDPPortManager.addFileTransfer(1, filePath, fileName);
-        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
+        new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
 
         return;
-
     }
 
+    // get port created by OS
     public int getPort() {
         return this.listenSocket.getLocalPort();
     }

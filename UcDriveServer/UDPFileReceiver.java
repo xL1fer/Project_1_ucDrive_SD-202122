@@ -1,45 +1,63 @@
+/*
+ *  "UDPFileReceiver.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 import java.security.*;
 import java.util.Arrays;
 
-public class UDPFileReceiver extends Thread{
+/**
+ * File replicate receiver class
+ */
+public class UDPFileReceiver extends Thread {
     private String filePath;
     private int port;
     private DatagramSocket aSocket;
-
     private static int timeout = 60000;
     private static int bufSize = 8192;
 
-    public UDPFileReceiver(int port){
+    public UDPFileReceiver(int port) {
         this.port = port;
-
         this.start();
     }
 
-    public void run(){
-        try{
+    public void run() {
+        try {
             aSocket = new DatagramSocket(port);
             aSocket.setSoTimeout(timeout);
         } catch (SocketException e) {
-            System.out.println("UDPFileReceiver - Socket: " + e.getMessage());
+            System.out.println("<UDPFileReceiver> Socket: " + e.getMessage());
             return;
         }
 
-        byte[] buffer = new byte[bufSize];
-        byte[] ackBuffer = new byte[] {(byte) 0xAA};
-        byte[] emptyBuffer = createEmptyByteArray(bufSize);
+        byte buffer[] = new byte[bufSize];
+        byte ackBuffer[] = new byte[] {(byte) 0xAA};
+        byte emptyBuffer[] = createEmptyByteArray(bufSize);
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
         DatagramPacket ack;
 
-        while(true){
+        while (true) {
             try {
-                //get filepath and filename
+                // get filepath and filename
                 aSocket.receive(packet);
 
-                //store file path
+                // store file path
                 filePath = new String(packet.getData(), 0, packet.getLength());
-                System.out.println("UDPFileReceiver - Filepath: " + filePath);
+                //System.out.println("<UDPFileReceiver> Filepath: " + filePath);
                 File newFile = new File(filePath);
                 FileOutputStream fos = new FileOutputStream(newFile);
 
@@ -48,56 +66,56 @@ public class UDPFileReceiver extends Thread{
                 ack = new DatagramPacket(ackBuffer, ackBuffer.length, packet.getAddress(), packet.getPort());
                 aSocket.send(ack);
 
-                while(true){
+                while (true) {
                     packet = new DatagramPacket(buffer, buffer.length);
 
                     aSocket.receive(packet);
-                    System.out.println("UDPFileReceiver - Received " + packet.getLength() + " bytes");
+                    //System.out.println("<UDPFileReceiver> Received " + packet.getLength() + " bytes");
 
-                    //if packet is empty
-                    if(Arrays.equals(packet.getData(), emptyBuffer)){
-                        System.out.println("UDPFileReceiver - Received empty packet.");
+                    // if packet is empty
+                    if (Arrays.equals(packet.getData(), emptyBuffer)) {
+                        System.out.println("<UDPFileReceiver> Received empty packet");
                         break;
                     }
 
 
-                    //write data to file
+                    // write data to file
                     fos.write(packet.getData(), 0, packet.getLength());
                     aSocket.send(ack);
                 }
                 fos.close();
 
-                //calculate SHA256 hash for the new file
+                // calculate SHA256 hash for the new file
                 byte hash[] = checksum(filePath);
 
-                System.out.println("UDPFileReceiver - Hash: " + Arrays.toString(hash));
-                System.out.println("UDPFileReceiver - Hash size: " + hash.length);
+                //System.out.println("<UDPFileReceiver> Hash: " + Arrays.toString(hash));
+                //System.out.println("<UDPFileReceiver> Hash size: " + hash.length);
 
                 packet = new DatagramPacket(hash, hash.length, ack.getAddress(), ack.getPort());
                 aSocket.send(packet);
 
-                //receive signal from sender
+                // receive signal from sender
                 ack = new DatagramPacket(ackBuffer, ackBuffer.length);
                 aSocket.receive(ack);
 
-                if(ack.getData()[0] == (byte)0xAA){
-                    System.out.println("UDPFileReceiver - File correct.");
+                if (ack.getData()[0] == (byte)0xAA) {
+                    System.out.println("<UDPFileReceiver> File received");
                     break;
                 }
-                else{
-                    System.out.println("UDPFileReceiver - File bad. Going to receive it again.");
+                else {
+                    System.out.println("<UDPFileReceiver> File corrupted, retrying");
                 }
             } catch (IOException e) {
-                System.out.println("UDPFileReceiver - IO: " + e.getMessage());
+                System.out.println("<UDPFileReceiver> IO: " + e.getMessage());
                 return;
             }
         }
     }
     
-    private byte[] createEmptyByteArray(int arraySize){
+    private byte[] createEmptyByteArray(int arraySize) {
         byte array[] = new byte[arraySize];
 
-        for(int i = 0; i < arraySize; i++){
+        for (int i = 0; i < arraySize; i++) {
             array[i] = 0x00;
         }
 
@@ -105,14 +123,14 @@ public class UDPFileReceiver extends Thread{
     }
 
     /* 
-        Method referenced from StackOverflow.
+    *   Method referenced from StackOverflow.
     */
     private static byte[] checksum(String filepath) throws IOException {
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("UDPFileSender - NoSuchAlgorithm: " + e.getMessage());
+            System.out.println("<UDPFileReceiver> NoSuchAlgorithm: " + e.getMessage());
             return null;
         }
         // file hashing with DigestInputStream  

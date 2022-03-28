@@ -22,14 +22,14 @@ import java.io.*;
 /**
  * Client handler server-sided class
  */
-public class ClientHandler extends Thread{
-    private Socket clientSocket;
-    private ObjectInputStream ois;
-    private ObjectOutputStream oos;
-    private boolean isAuthenticated;
-    private User user;
+public class ClientHandler extends Thread {
+    private Socket clientSocket;            // socket to handle the client this thread is responsible with
+    private ObjectInputStream ois;          // object input stream to receive data from client
+    private ObjectOutputStream oos;         // object output stream to send data to client
+    private boolean isAuthenticated;        // indicates if user is authencicated
+    private User user;                      // user instance
 
-    public ClientHandler(Socket clientSocket){
+    public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.isAuthenticated = false;
 
@@ -39,21 +39,20 @@ public class ClientHandler extends Thread{
             this.ois = new ObjectInputStream(clientSocket.getInputStream());
             this.start();
         } catch (IOException e) {
-            System.out.println("Connection:" + e.getMessage());
+            System.out.println("<ClientHandler> IO: " + e.getMessage());
         }
     }
 
-    public void run(){
-
+    public void run() {
         // authentication loop
         outer:
         while (true) {
             try {
                 ClientAuth auth = (ClientAuth) ois.readObject();
-                for(User u : UcDrive_Server.users){
+                for (User u : UcDriveServer.users) {
                     //System.out.println(u);
-                    if(u.compareAuth(auth)){
-                        System.out.println("> Client " + auth.getUsername() + " authenticated.");
+                    if (u.compareAuth(auth)) {
+                        System.out.println("<ClientHandler> Client " + auth.getUsername() + " authenticated");
                         this.user = u;
                         this.isAuthenticated = true;
                         oos.writeBoolean(true);
@@ -67,10 +66,10 @@ public class ClientHandler extends Thread{
                 oos.flush();
 
             } catch (ClassNotFoundException e) {
-                System.out.println("ClassNotFound: " + e.getMessage());
+                System.out.println("<ClientHandler> ClassNotFound: " + e.getMessage());
                 return;
             } catch (IOException e) {
-                System.out.println("IOException: " + e.getMessage());
+                System.out.println("<ClientHandler> IO: " + e.getMessage());
                 return;
             }
         }
@@ -78,14 +77,14 @@ public class ClientHandler extends Thread{
         String dirPath, curPath, res, opt[];
         // commands loop
         while (true) {
-            try{
+            try {
                 //send current directory to client
                 oos.writeUTF(user.getClientPath());
                 oos.flush();
 
                 opt = ois.readUTF().split(" ");
 
-                switch(opt[0]){
+                switch (opt[0]) {
                     // list directory
                     case "ls":
                         oos.writeUTF(getFileList());
@@ -105,7 +104,7 @@ public class ClientHandler extends Thread{
                         
                         //send information to secondary server to create dir
                         UDPPortManager.addFileTransfer(2, curPath + "\\" + dirPath, "");
-                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
+                        new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
 
                         break;
                     // remove directory
@@ -114,14 +113,14 @@ public class ClientHandler extends Thread{
                         curPath = user.getCurPath();
                         file = new File(user.getCurPath() + "\\" + joinString(opt));
                         // directory not found
-                        if(file.exists() == false){
+                        if (file.exists() == false) {
                             oos.writeUTF("> Directory not found.");
                             oos.flush();
                             break;
                         }
 
                         UDPPortManager.addFileTransfer(3, curPath + "\\" + dirPath, "");
-                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
+                        new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
                         
                         deleteDir(file);
                         oos.writeUTF("> Directory \"" + joinString(opt) + "\" deleted.");
@@ -139,13 +138,13 @@ public class ClientHandler extends Thread{
                     case "dw":
                         file = new File(user.getCurPath() + "\\" + joinString(opt));
                         // directory not found
-                        if(file.exists() == false){
+                        if (file.exists() == false) {
                             oos.writeUTF("> Directory not found.");
                             oos.flush();
                             break;
                         }
                         // directory is not a file
-                        if(!file.isFile()){
+                        if (!file.isFile()) {
                             oos.writeUTF("> Directory is not a file.");
                             oos.flush();
                             break;
@@ -186,7 +185,6 @@ public class ClientHandler extends Thread{
                             oos.flush();
                         }
 
-
                         ServerDownloadHandler dHandler = new ServerDownloadHandler(user.getCurPath());
                         
                         int up_port = dHandler.getPort();
@@ -203,39 +201,41 @@ public class ClientHandler extends Thread{
                 }
 
             } catch (EOFException e) {
-                System.out.println("EOF:" + e);
+                System.out.println("<ClientHandler> EOF: " + e);
                 return;
             } catch (IOException e) {
-                System.out.println("IO:" + e);
+                System.out.println("<ClientHandler> IO: <ClientHandler> " + e);
                 return;
             }
         }
     }
 
-    private String getFileList(){
+    // get all files from user server directory
+    private String getFileList() {
         File f = new File(user.getCurPath());
         String files[] = f.list();
         String ls = "";
-        for(String s : files){
+        for (String s : files) {
             ls += s;
             ls += "  ";
         }
         return ls;
     }
 
-    private String changeDirectory(String path){
-        if(path.equals("..")){
+    // change user server directory
+    private String changeDirectory(String path) {
+        if (path.equals("..")) {
             String directoryList[] = user.getCurPath().split("\\\\");
 
             //restrict to home path
-            if(directoryList.length < 3){
+            if (directoryList.length < 3) {
                 return "> Cannot leave home folder.";
             }
 
             String newPath = "";
-            for(int i = 0; i < directoryList.length - 1; i++){
+            for (int i = 0; i < directoryList.length - 1; i++) {
                 newPath += directoryList[i];
-                if(i != directoryList.length - 2)
+                if (i != directoryList.length - 2)
                     newPath += "\\";
             }
             user.setCurPath(newPath);
@@ -246,14 +246,14 @@ public class ClientHandler extends Thread{
         File files[] = f.listFiles();
 
         //check if directory exists
-        for(File file : files){
+        for (File file : files) {
             //file.tostring will return a path like "Users\alex\asd", we want only "asd"
             String fileNames[] = file.toString().split("\\\\");
             String fileName = fileNames[fileNames.length-1];
 
             //checks if the path is directory and if the name equals the desired path
-            if(fileName.equals(path)){
-                if(file.isDirectory()){
+            if (fileName.equals(path)) {
+                if (file.isDirectory()) {
                     user.setCurPath(user.getCurPath() + "\\" + path);
                     return "";
                 }
@@ -266,11 +266,11 @@ public class ClientHandler extends Thread{
         return "> Invalid path.";
     }
 
-    private String createDirectory(String dirName){
-        System.out.println("DirName: " + user.getCurPath() + "\\" + dirName);
+    private String createDirectory(String dirName) {
+        //System.out.println("DirName: " + user.getCurPath() + "\\" + dirName);
         File f = new File(user.getCurPath() + "\\" + dirName);
-        System.out.println("Dir: " + f);
-        if(f.exists() == false){
+        //System.out.println("Dir: " + f);
+        if (f.exists() == false) {
             f.mkdirs();
             // change user to created directory
             changeDirectory(dirName);
@@ -280,6 +280,7 @@ public class ClientHandler extends Thread{
         return "> Directory already exists.";
     }
 
+    // delete specified file / directory
     private void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -289,17 +290,16 @@ public class ClientHandler extends Thread{
                 }
             }
         }
-        if (!file.delete()){
+        if (!file.delete())
             System.out.println("> Could not delete file \"" + file + "\".");
-        }
     }
 
-    //this will remove the first index!!!!
-    private static String joinString(String array[]){
+    // function to join a string array except the first element
+    private static String joinString(String array[]) {
         String str = "";
-        for(int i = 1; i < array.length; i++){
+        for (int i = 1; i < array.length; i++) {
             str += array[i];
-            if(i != array.length - 1)
+            if (i != array.length - 1)
                 str += " ";
         }
         return str;

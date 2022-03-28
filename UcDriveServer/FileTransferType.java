@@ -1,5 +1,26 @@
+/*
+ *  "FileTransferType.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
+ /**
+ * File Transfer class to help handle
+ * server replications
+ */
 public class FileTransferType {
-    private int opt;
+    private int opt;            // indicates if we need to: 1 - create a file; 2 - make a directory; 3 - delete a directory
     private String filePath;
     private String fileName;
 

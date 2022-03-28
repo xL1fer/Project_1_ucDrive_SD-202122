@@ -1,15 +1,34 @@
+/*
+ *  "ServerUploadHandler.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.*;
 import java.net.*;
 
-
-public class ServerUploadHandler extends Thread{
-    private DataOutputStream dos;
-    private String filePath;
-    ServerSocket listenSocket;
-    private int bufSize = 8192;
-    private byte buffer[];
+/**
+ * Upload server-sided class
+ */
+public class ServerUploadHandler extends Thread {
+    private DataOutputStream dos;           // send files
+    private String filePath;                // file path
+    private ServerSocket listenSocket;      // socket to send packets
+    private int bufSize = 8192;             // packet buffer size
+    private byte buffer[];                  // packet buffer
     
-    public ServerUploadHandler(String filePath){
+    public ServerUploadHandler(String filePath) {
         this.buffer = new byte[bufSize];
         this.filePath = filePath;
         
@@ -18,11 +37,11 @@ public class ServerUploadHandler extends Thread{
             this.listenSocket = new ServerSocket(0);
             this.start();
         } catch (IOException e) {
-            System.out.println("IO:" + e.getMessage());
+            System.out.println("<ServerUploadHandler> IO: " + e.getMessage());
         }
     }
 
-    public void run(){
+    public void run() {
         try {
             System.out.println("\n:: Download Socket listening on port " + getPort() + " ::");
             System.out.println("DOWNLOAD LISTEN SOCKET=" + listenSocket);
@@ -51,14 +70,13 @@ public class ServerUploadHandler extends Thread{
             clientSocket.close();
             listenSocket.close();
         } catch (IOException e) {
-            System.out.println("IO:" + e.getMessage());
+            System.out.println("<ServerUploadHandler> IO: " + e.getMessage());
         }
 
-        //System.out.println("Dl removing unused port");
-        //UcDrive_Server.ports.remove(Integer.valueOf(port));
         return;
     }
 
+    // get port created by OS
     public int getPort() {
         return this.listenSocket.getLocalPort();
     }

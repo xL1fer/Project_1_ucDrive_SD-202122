@@ -1,5 +1,5 @@
 /*
- *  "UcDrive_Server.java"
+ *  "UcDriveServer.java"
  * 
  *  ====================================
  *
@@ -28,20 +28,20 @@ import java.io.*;
  * Server class responsible for handling
  * the server application
  */
-public class UcDrive_Server {
-    protected static String myServerIp;
-    protected static String otherServerIp;
-    protected static String myServerPort;
-    protected static String otherServerPort;
-    protected static int maxFailedHearbeats = 4;
-    protected static int heartbeatDelay = 1000;
-    protected static boolean otherServerUp;
-    private static Scanner sc;
+public class UcDriveServer {
+    protected static String myServerIp;                 // server Ip of this server instance
+    protected static String otherServerIp;              // server Ip of other server instance
+    protected static String myServerPort;               // server port of this server instance
+    protected static String otherServerPort;            // server port of other server instance
+    protected static int maxFailedHearbeats = 4;        // maximum failed heartbeats with the other server (will be +1 because of the condition used)
+    protected static int heartbeatDelay = 1000;         // delay between each heartbeat
+    protected static boolean otherServerUp;             // variable to indicate if other server is running
+    private static Scanner sc;                          // scanner "global" variable
 
-    protected static int portManager = 9000;
+    protected static int portManager = 9000;            // port for server replication purposes
+    protected static ArrayList<User> users;             // users array list (protected - visible by same package)
 
-    protected static ArrayList<User> users;     // protected - visible by same package
-
+    // main function
     public static void main(String args[]) {
         clearTerminal();
 
@@ -53,6 +53,9 @@ public class UcDrive_Server {
         System.out.println("            \\/        \\/                    \\/");
         System.out.println("\n ucDrive v0.01\n Server Application\n\n====================\n");
 
+        /*
+        *   Start by asking to edit users config file
+        */
         sc = new Scanner(System.in);
         users = new ArrayList<>();
         loadUsers();
@@ -60,12 +63,15 @@ public class UcDrive_Server {
         System.out.println("> Do you want to manage \"user.data\" file?");
         String opt = sc.nextLine();
 
-        // TODO: (not prioritary) make a thread responsible for handling the user data while the other is already running the server
-        if(opt.equals("yes") || opt.equals("y"))
+        if (opt.equals("yes") || opt.equals("y"))
             manageUserData();
 
+        // save "user.data" file
         saveUsers();
 
+        /*
+        *   Get each server information
+        */
         System.out.print("> My Server IP [localhost]: ");
         myServerIp = sc.nextLine();
         if (myServerIp.equals("")) myServerIp = "localhost";
@@ -96,62 +102,65 @@ public class UcDrive_Server {
             return;
         }
 
-        // open with secondary UDPPortManager constructor
+        /*
+        *   Start initializing server with corresponding functionalities (primary or secondary)
+        */
+        // create UDPPortManager instance for secondary server (will be listening for any file changes)
         UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
 
         // check if the other server is up
-        if(!checkServer(otherServerIp, Integer.parseInt(otherServerPort))){
-            System.out.println("Unexpected error.");
+        if (!checkServer(otherServerIp, Integer.parseInt(otherServerPort))) {
+            System.out.println("<UcDriveServer> Unexpected error");
             udpPortReceiver.interrupt();
             sc.close();
             return;
         }
 
-        // this is now the primary server, end udpreceiver
+        // this is now the primary server, we can close udpPortReceiver
         udpPortReceiver.interrupt();
 
-        //UDPPortManager udpPortSender = new UDPPortManager(otherServerIp, portManager, true);
-
-        // heartbeat UDP socket
+        // heartbeat UDP socket (opened in the primary server)
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
         
-        
+        // open socket for clients communication
         try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");
             System.out.println("LISTEN SOCKET=" + listenSocket);
             while (true) {
-                Socket clientSocket = listenSocket.accept(); // BLOQUEANTE
+                Socket clientSocket = listenSocket.accept();
                 System.out.println("CLIENT_SOCKET (created at accept())="+clientSocket);
                 new ClientHandler(clientSocket);
             }
         } catch (IOException e) {
-            System.out.println("Listen:" + e.getMessage());
+            System.out.println("<UcDriveServer> Listen: " + e.getMessage());
         }
 
+        //TODO: more saves for the users file (:
         //saveUsers();
         sc.close();
     }
 
+    // function to manage users configuration file
     private static void manageUserData() {
         String opt;
-        //outer:
-        while(true){
-            System.out.println("\nTo add clients type: \"add [username] [password]\"");
-            System.out.println("To remove clients type: \"remove [username]\"");
-            System.out.println("To list clients and passwords: \"list\"");
-            System.out.println("To leave this menu, type: \"quit\"");
+
+        while (true) {
+            System.out.println("\nAdd client: \"add [username] [password]\"");
+            System.out.println("Remove client: \"remove [username]\"");
+            System.out.println("List clients and passwords: \"list\"");
+            System.out.println("Leave menu: \"quit\"");
             opt = sc.nextLine();
 
             String words[] = opt.split(" ");
 
-            switch(words[0]){
+            switch (words[0]) {
                 // quit
                 case "quit":
                     return;
                 // add user
                 case "add":
                     if (words.length < 3) {
-                        System.out.println("Too few arguments.");
+                        System.out.println("> Too few arguments.");
                         break;
                     }
                     addUser(words);
@@ -160,26 +169,26 @@ public class UcDrive_Server {
                 case "remove":
                     // TODO: delete user directory aswell and remove user and user directory from secondary server
                     if (words.length < 2) {
-                        System.out.println("Too few arguments.");
+                        System.out.println("> Too few arguments.");
                         break;
                     }
                     removeUser(words);
                     break;
                 // list users and corresponding passwords
                 case "list":
-                    for (User u : users ){
+                    for (User u : users ) {
                         u.createDirectory();
                         System.out.println(u.getClientData().toString());
                     }
                     break;
                 default:
-                    System.out.println("Invalid format.");
+                    System.out.println("> Invalid format.");
                     break;
             }
         }
     }
 
-    // syncronized method to prevent threads concurrency
+    // save users configuration file (syncronized method to prevent threads concurrency)
     private static synchronized void saveUsers() {
         try {
             FileOutputStream fos = new FileOutputStream("storage\\users.data");
@@ -189,13 +198,13 @@ public class UcDrive_Server {
             fos.close();
         } catch (FileNotFoundException e) {
             //System.out.println("FileNotFound:" + e.getMessage());
-            System.out.println("<UcDriveServer>: \"user.data\" not found");
+            System.out.println("<UcDriveServer> FileNotFound: \"user.data\" not found");
         } catch (IOException e){
-            System.out.println("IOException:" + e.getMessage());
+            System.out.println("<UcDriveServer> IO: " + e.getMessage());
         }
     }
 
-    // syncronized method to prevent threads concurrency
+    // load users to memory (syncronized method to prevent threads concurrency)
     private static synchronized void loadUsers() {
         try {
             FileInputStream fis = new FileInputStream("storage\\users.data");
@@ -205,92 +214,98 @@ public class UcDrive_Server {
             fis.close();
         } catch (FileNotFoundException e) {
             //System.out.println("FileNotFound:" + e.getMessage());
-            System.out.println("<UcDriveServer>: \"user.data\" not found");
+            System.out.println("<UcDriveServer> FileNotFound: \"user.data\" not found");
         } catch (IOException e){
-            System.out.println("IOException:" + e.getMessage());
+            System.out.println("<UcDriveServer> IO: " + e.getMessage());
         } catch (ClassNotFoundException e){
-            System.out.println("ClassNotFound:" + e.getMessage());
+            System.out.println("<UcDriveServer> ClassNotFound: " + e.getMessage());
         } catch (ClassCastException e){
-            System.out.println("ClassCast:" + e.getMessage());
+            System.out.println("<UcDriveServer> ClassCast: " + e.getMessage());
         }
     }
 
+    // function to clear terminal
     private static void clearTerminal(){
         try {
             new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
         } catch (InterruptedException e) {
-            System.out.println("InterruptedException:" + e.getMessage());
+            System.out.println("<UcDriveServer> Interrupted: " + e.getMessage());
         } catch (IOException e) {
-            System.out.println("IOException:" + e.getMessage());
+            System.out.println("<UcDriveServer> IO: " + e.getMessage());
         }
     }
 
+    // add user to "global" array list
     private static void addUser(String words[]) {
-        //checks if client with username already exists
-        for(User u : users){
-            if(u.getClientData().getUsername().equals(words[1])){
-                System.out.println("Username already registed.");
+        // checks if client with username already exists
+        for (User u : users) {
+            if (u.getClientData().getUsername().equals(words[1])) {
+                System.out.println("> Username already registed.");
                 return;
             }
         }
 
-        //client can be added
+        // client can be added
         ClientAuth newClientAuth = new ClientAuth(words[1], words[2]);
         users.add(new User(newClientAuth));
-        System.out.println("Added user " + words[1]);
+        System.out.println("> Added user " + words[1]);
     }
 
+    // remove user from "global" array list
     private static void removeUser(String words[]) {
-        //checks if client with username exists
-        for(User u : users){
-            if(u.getClientData().getUsername().equals(words[1])){
+        // checks if client with username exists
+        for (User u : users) {
+            if (u.getClientData().getUsername().equals(words[1])) {
                 users.remove(u);
-                System.out.println("User " + words[1] + " successfully removed.");
+                System.out.println("> User " + words[1] + " successfully removed.");
                 return;
             }
         }
 
-        //client not found
-        System.out.println("User " + words[1] + " not found.");
+        // client not found
+        System.out.println("> User " + words[1] + " not found.");
     }
 
     // TODO: config variable for heartbet time and timeout
-    private static boolean checkServer(String serverIp, int serverPort){
+    // function to check while "other server" is running
+    private static boolean checkServer(String serverIp, int serverPort) {
         int heartbeat = 0;
 
+        // open socket to try to communicate with primary server
         DatagramSocket aSocket;
-        try{
-            aSocket = new DatagramSocket();   
+        try {
+            aSocket = new DatagramSocket();
             aSocket.setSoTimeout(heartbeatDelay);
-        } catch(SocketException e){
-            System.out.println("Socket: " + e.getMessage());
+        } catch(SocketException e) {
+            System.out.println("<UcDriveServer> Socket: " + e.getMessage());
             return false;
         }
         
         byte buffer[] = new byte[1];
         buffer[0] = (byte)0xAA;
         
-        while(true){
-            try{
+        // send heartbeats to primary server
+        while (true) {
+            try {
                 InetAddress aHost = InetAddress.getByName(serverIp);
                 DatagramPacket request = new DatagramPacket(buffer, buffer.length, aHost, serverPort);
                 aSocket.send(request);
                 
-                DatagramPacket reply = new DatagramPacket(buffer, buffer.length);	
+                DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
                 aSocket.receive(reply);
 
                 heartbeat = 0;
-                System.out.println("Received heartbeat.");
-            } catch(SocketTimeoutException e){
-                System.out.println("Heartbeat failed.");
+                System.out.println("<UcDriveServer> Received heartbeat");
+            } catch(SocketTimeoutException e) {
+                System.out.println("<UcDriveServer> Heartbeat failed");
                 heartbeat++;
-                if(heartbeat > maxFailedHearbeats){
-                    System.out.println("Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" is down.");
+                if (heartbeat > maxFailedHearbeats) {
+                    System.out.println("<UcDriveServer> Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" is down");
                     break;
                 }
 
-            } catch(IOException e){
-                System.out.println("IOException: " + e.getMessage());
+            } catch(IOException e) {
+                System.out.println("<UcDriveServer> IO: " + e.getMessage());
                 aSocket.close();
                 return false;
             }
@@ -301,26 +316,21 @@ public class UcDrive_Server {
         return true;
     }
 
+    // replicate all files from the primary server to the secondary server
     protected static void replicateFiles(File file) {
+        // start directory
         if (file == null) {
             file = new File("storage");
         }
 
-        System.out.println("DEBUG: " + file.listFiles());
-
         for (File fileEntry : file.listFiles()) {
             // if file is a folder
             if (fileEntry.isDirectory()) {
-                System.out.println("Replicating directory: " + fileEntry + " tostring: " + fileEntry.toString());
-
                 UDPPortManager.addFileTransfer(2, fileEntry.toString(), "");
-
                 replicateFiles(fileEntry);
             }
             // if file is a file
             else {
-                System.out.println("Replicating file: " + fileEntry);
-
                 String fileNames[] = fileEntry.toString().split("\\\\");
                 String fileName = fileNames[fileNames.length-1];
                 String filePath = "";

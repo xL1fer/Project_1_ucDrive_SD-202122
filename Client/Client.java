@@ -52,17 +52,14 @@ public class Client {
         System.out.println("            \\/        \\/                    \\/");
         System.out.println("\n ucDrive v0.01\n Client Application\n\n====================\n");
 
-
-        /*
-        *   Start by getting each server information
-        */
+        // some initializations
         sc = new Scanner(System.in);
         connectedServer = 0;
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
 
         /*
-        *   Get servers IP
+        *   Start by getting each server information
         */
         getServerIp();
 
@@ -369,7 +366,7 @@ public class Client {
                         // in case the password is changed we want to stop the application in order to force the client to authenticate again
                         // this could also be done by calling "sendAuthentication()" so that the client wouldnt need to restart the app
                         return;
-                    // clear console
+                    // download file from server
                     case "dw":
                         if (!onServerDirectory) {
                             System.out.println("> Cannot download from local directory.");
@@ -422,6 +419,7 @@ public class Client {
                             new ClientDownloadHandler(secServerIp, port, localDirectory);
 
                         break;
+                    // upload file to server
                     case "up":
                         if (onServerDirectory) {
                             System.out.println("> Cannot upload from server directory.");
@@ -470,7 +468,7 @@ public class Client {
                             oos.flush();
                         }
 
-                        //server is sending the port
+                        // server is sending the port
                         int up_port = ois.readInt();
                         if (up_port == -1) {
                             System.out.println("> Error: Cannot download file.");
@@ -491,6 +489,7 @@ public class Client {
                         ois.readUTF();
 
                         break;
+                    // clear console
                     case "clear":
                         clearTerminal();
                         // we only need to flush the server when on its directory
@@ -499,9 +498,9 @@ public class Client {
                             oos.flush();
                         }
                         break;
-                    //change server ip
+                    // change server ip
                     case "sv":
-                        //tell server this client is leaving
+                        // tell server this client is leaving
                         oos.writeUTF("exit");
                         oos.flush();
 
