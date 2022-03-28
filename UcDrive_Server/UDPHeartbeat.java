@@ -30,7 +30,10 @@ public class UDPHeartbeat extends Thread{
                 aSocket.receive(request);
 
                 if(UcDrive_Server.otherServerUp == false){
-                    //UcDrive_Server.transferFiles()
+                    //UcDrive_Server.replicateFiles()
+                    UcDrive_Server.otherServerUp = true;
+                    UcDrive_Server.replicateFiles(null);
+                    new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
                 }
 
                 UcDrive_Server.otherServerUp = true;

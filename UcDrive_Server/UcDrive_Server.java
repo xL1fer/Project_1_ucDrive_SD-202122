@@ -17,6 +17,7 @@
 
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
 
@@ -35,6 +36,7 @@ public class UcDrive_Server {
     protected static int maxFailedHearbeats = 4;
     protected static int heartbeatDelay = 1000;
     protected static boolean otherServerUp;
+    private static Scanner sc;
 
     protected static int portManager = 9000;
 
@@ -51,7 +53,7 @@ public class UcDrive_Server {
         System.out.println("            \\/        \\/                    \\/");
         System.out.println("\n ucDrive v0.01\n Server Application\n\n====================\n");
 
-        Scanner sc = new Scanner(System.in);
+        sc = new Scanner(System.in);
         users = new ArrayList<>();
         loadUsers();
 
@@ -94,7 +96,8 @@ public class UcDrive_Server {
             return;
         }
 
-        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager);
+        // open with secondary UDPPortManager constructor
+        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
 
         // check if the other server is up
         if(!checkServer(otherServerIp, Integer.parseInt(otherServerPort))){
@@ -130,7 +133,6 @@ public class UcDrive_Server {
     }
 
     private static void manageUserData() {
-        Scanner sc = new Scanner(System.in);
         String opt;
         //outer:
         while(true){
@@ -145,7 +147,6 @@ public class UcDrive_Server {
             switch(words[0]){
                 // quit
                 case "quit":
-                    sc.close();
                     return;
                 // add user
                 case "add":
@@ -181,13 +182,14 @@ public class UcDrive_Server {
     // syncronized method to prevent threads concurrency
     private static synchronized void saveUsers() {
         try {
-            FileOutputStream fos = new FileOutputStream("users.data");
+            FileOutputStream fos = new FileOutputStream("storage\\users.data");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
             oos.writeObject(users);
 
             fos.close();
         } catch (FileNotFoundException e) {
-            System.out.println("FileNotFound:" + e.getMessage());
+            //System.out.println("FileNotFound:" + e.getMessage());
+            System.out.println("<UcDriveServer>: \"user.data\" not found");
         } catch (IOException e){
             System.out.println("IOException:" + e.getMessage());
         }
@@ -196,13 +198,14 @@ public class UcDrive_Server {
     // syncronized method to prevent threads concurrency
     private static synchronized void loadUsers() {
         try {
-            FileInputStream fis = new FileInputStream("users.data");
+            FileInputStream fis = new FileInputStream("storage\\users.data");
             ObjectInputStream ois = new ObjectInputStream(fis);
             users = (ArrayList<User>) ois.readObject();
 
             fis.close();
         } catch (FileNotFoundException e) {
-            System.out.println("FileNotFound:" + e.getMessage());
+            //System.out.println("FileNotFound:" + e.getMessage());
+            System.out.println("<UcDriveServer>: \"user.data\" not found");
         } catch (IOException e){
             System.out.println("IOException:" + e.getMessage());
         } catch (ClassNotFoundException e){
@@ -296,6 +299,40 @@ public class UcDrive_Server {
         aSocket.close();
 
         return true;
+    }
+
+    protected static void replicateFiles(File file) {
+        if (file == null) {
+            file = new File("storage");
+        }
+
+        System.out.println("DEBUG: " + file.listFiles());
+
+        for (File fileEntry : file.listFiles()) {
+            // if file is a folder
+            if (fileEntry.isDirectory()) {
+                System.out.println("Replicating directory: " + fileEntry + " tostring: " + fileEntry.toString());
+
+                UDPPortManager.addFileTransfer(2, fileEntry.toString(), "");
+
+                replicateFiles(fileEntry);
+            }
+            // if file is a file
+            else {
+                System.out.println("Replicating file: " + fileEntry);
+
+                String fileNames[] = fileEntry.toString().split("\\\\");
+                String fileName = fileNames[fileNames.length-1];
+                String filePath = "";
+                for (int i = 0; i < fileNames.length - 1; i++) {
+                    filePath += fileNames[i];
+                    filePath += "\\";
+                }
+
+                UDPPortManager.addFileTransfer(1, filePath, fileName);
+            }
+        }
+
     }
     
 }

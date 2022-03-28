@@ -75,8 +75,7 @@ public class ClientHandler extends Thread{
             }
         }
         File file;
-        String opt[];
-        String res;
+        String dirPath, curPath, res, opt[];
         // commands loop
         while (true) {
             try{
@@ -99,18 +98,20 @@ public class ClientHandler extends Thread{
                         break;
                     // make directory
                     case "mkdir":
-                        String dirPath = joinString(opt);
-                        String curPath = user.getCurPath();
+                        dirPath = joinString(opt);
+                        curPath = user.getCurPath();
                         oos.writeUTF(createDirectory(dirPath));
                         oos.flush();
                         
                         //send information to secondary server to create dir
-                        System.out.println("Sending to secondary path: " + curPath + "\\" + dirPath);
-                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, curPath + "\\" + dirPath, "", 2);
+                        UDPPortManager.addFileTransfer(2, curPath + "\\" + dirPath, "");
+                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
 
                         break;
                     // remove directory
                     case "rm":
+                        dirPath = joinString(opt);
+                        curPath = user.getCurPath();
                         file = new File(user.getCurPath() + "\\" + joinString(opt));
                         // directory not found
                         if(file.exists() == false){
@@ -118,6 +119,9 @@ public class ClientHandler extends Thread{
                             oos.flush();
                             break;
                         }
+
+                        UDPPortManager.addFileTransfer(3, curPath + "\\" + dirPath, "");
+                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
                         
                         deleteDir(file);
                         oos.writeUTF("> Directory \"" + joinString(opt) + "\" deleted.");

@@ -57,7 +57,8 @@ public class ServerDownloadHandler extends Thread{
         //UcDrive_Server.ports.remove(Integer.valueOf(port));
 
         //send files to secondary server
-        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, filePath, fileName, 1);
+        UDPPortManager.addFileTransfer(1, filePath, fileName);
+        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, true);
 
         return;
 
