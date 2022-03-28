@@ -83,6 +83,20 @@ public class UDPPortManager extends Thread{
                         new UDPFileSender(otherServerIp, availablePort, filePath, fileName);
 
                         break;
+
+                    case 2:
+                        sendOpt(opt);
+
+                        //receive acknowledgement
+                        aSocket.receive(packet);
+
+                        byte pathBuffer[] = filePath.getBytes();
+                        DatagramPacket path = new DatagramPacket(pathBuffer, pathBuffer.length, packet.getAddress(), packet.getPort());
+                        aSocket.send(path);
+
+                        //receive acknowledgement
+                        aSocket.receive(packet);
+                        break;
                 }
                 
 
@@ -92,9 +106,13 @@ public class UDPPortManager extends Thread{
             }
         }
         else{
+
+            System.out.println( System.getProperty("user.dir"));
             //receive port for communication
             packet = new DatagramPacket(buffer, buffer.length);
 
+            byte[] pathBuffer = new byte[100];
+            DatagramPacket pathPacket = new DatagramPacket(pathBuffer, pathBuffer.length);
             int opt;
             try{
                 aSocket = new DatagramSocket(port);
@@ -151,19 +169,17 @@ public class UDPPortManager extends Thread{
                         //primary server wants to create a directory
                         case 2:
                             //receive directory to create
-                            aSocket.receive(packet);
+                            aSocket.receive(pathPacket);
                             sendAcknowledgement(packet);
-                            
-                            //byte array to utf
-                            bais = new ByteArrayInputStream(packet.getData());
-                            dis = new DataInputStream(bais);
 
-                            dir = dis.readUTF();
+                            dir = new String(pathPacket.getData());
+
+                            System.out.println("diretoria a ser criada " + dir);
 
                             createDirectory(dir);
 
                             break;
-                        //primary server wants to delete a directory/file
+                        //TODO: primary server wants to delete a directory/file
                         case 3:
                             break;
                         default:
@@ -184,13 +200,14 @@ public class UDPPortManager extends Thread{
     }
 
     private void createDirectory(String newDir){
+        System.out.println("DirName: " + newDir);
         File f = new File(newDir);
         System.out.println("UDPPortManager (Secondary) - Dir: " + f);
         if(f.exists() == false){
+            System.out.println("UDPPortManager (Secondary) - Dir doesn't exist, gonna create it.");
             f.mkdirs();
         }
-    }
-    
+    }    
 
     private int getAvailablePort(){
         DatagramSocket bSocket;

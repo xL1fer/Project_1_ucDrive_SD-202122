@@ -99,9 +99,15 @@ public class ClientHandler extends Thread{
                         break;
                     // make directory
                     case "mkdir":
-                        oos.writeUTF(createDirectory(joinString(opt)));
+                        String dirPath = joinString(opt);
+                        String curPath = user.getCurPath();
+                        oos.writeUTF(createDirectory(dirPath));
                         oos.flush();
                         
+                        //send information to secondary server to create dir
+                        System.out.println("Sending to secondary path: " + curPath + "\\" + dirPath);
+                        new UDPPortManager(UcDrive_Server.otherServerIp, UcDrive_Server.portManager, curPath + "\\" + dirPath, "", 2);
+
                         break;
                     // remove directory
                     case "rm":
@@ -257,8 +263,9 @@ public class ClientHandler extends Thread{
     }
 
     private String createDirectory(String dirName){
+        System.out.println("DirName: " + user.getCurPath() + "\\" + dirName);
         File f = new File(user.getCurPath() + "\\" + dirName);
-        //System.out.println("Dir: " + f);
+        System.out.println("Dir: " + f);
         if(f.exists() == false){
             f.mkdirs();
             // change user to created directory

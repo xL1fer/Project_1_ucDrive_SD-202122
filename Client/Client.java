@@ -61,35 +61,10 @@ public class Client {
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
 
-        System.out.print("> Primary Server IP [localhost]: ");
-        priServerIp = sc.nextLine();
-        if (priServerIp.equals("")) priServerIp = "localhost";
-
-        System.out.print("> Primary Server Port [6000]: ");
-        priServerPort = sc.nextLine();
-        if (priServerPort.equals("")) priServerPort = "6000";
-
-        // using regex to determine wether or not the serverPort string is an Integer
-        if (!priServerPort.matches("-?\\d+")) {
-            System.out.println("> Server Port must be an integer.");
-            sc.close();
-            return;
-        }
-
-        System.out.print("> Secondary Server IP [localhost]: ");
-        secServerIp = sc.nextLine();
-        if (secServerIp.equals("")) secServerIp = "localhost";
-
-        System.out.print("> Secondary Server Port [7000]: ");
-        secServerPort = sc.nextLine();
-        if (secServerPort.equals("")) secServerPort = "7000";
-
-        // using regex to determine wether or not the serverPort string is an Integer
-        if (!secServerPort.matches("-?\\d+")) {
-            System.out.println("> Server Port must be an integer.");
-            sc.close();
-            return;
-        }
+        /*
+        *   Get servers IP
+        */
+        getServerIp();
 
         /*
         *   Connect to the current primary server
@@ -111,6 +86,42 @@ public class Client {
             System.out.println("IO: " + e.getMessage());
         }
         sc.close();
+    }
+
+    private static void getServerIp() {
+        while(true){
+            System.out.print("> Primary Server IP [localhost]: ");
+            priServerIp = sc.nextLine();
+            if (priServerIp.equals("")) priServerIp = "localhost";
+
+            System.out.print("> Primary Server Port [6000]: ");
+            priServerPort = sc.nextLine();
+            if (priServerPort.equals("")) priServerPort = "6000";
+
+            // using regex to determine wether or not the serverPort string is an Integer
+            if (!priServerPort.matches("-?\\d+")) {
+                System.out.println("> Server Port must be an integer.");
+                continue;
+            }
+            break;
+        }
+
+        while(true){
+            System.out.print("> Secondary Server IP [localhost]: ");
+            secServerIp = sc.nextLine();
+            if (secServerIp.equals("")) secServerIp = "localhost";
+
+            System.out.print("> Secondary Server Port [7000]: ");
+            secServerPort = sc.nextLine();
+            if (secServerPort.equals("")) secServerPort = "7000";
+
+            // using regex to determine wether or not the serverPort string is an Integer
+            if (!secServerPort.matches("-?\\d+")) {
+                System.out.println("> Server Port must be an integer.");
+                continue;
+            }
+            break;
+        }
     }
 
     // method to stablish connection with which ever is the primary server
@@ -487,6 +498,25 @@ public class Client {
                             oos.writeUTF("dir");
                             oos.flush();
                         }
+                        break;
+                    //change server ip
+                    case "sv":
+                        //tell server this client is leaving
+                        oos.writeUTF("exit");
+                        oos.flush();
+
+                        getServerIp();
+
+                        // connect to server
+                        if (!connectToServer())
+                            return;
+
+                        // as soon as the user is connected, ask for authentication
+                        sendAuthentication();
+                        
+                        // reset directory to server directory
+                        onServerDirectory = true;
+
                         break;
                     // exit program
                     case "exit":
