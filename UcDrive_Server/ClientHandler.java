@@ -101,6 +101,7 @@ public class ClientHandler extends Thread{
                     case "mkdir":
                         oos.writeUTF(createDirectory(joinString(opt)));
                         oos.flush();
+                        
                         break;
                     // remove directory
                     case "rm":
