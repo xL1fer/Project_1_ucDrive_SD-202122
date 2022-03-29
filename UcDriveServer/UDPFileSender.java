@@ -31,7 +31,7 @@ public class UDPFileSender extends Thread {
     private DatagramSocket aSocket;
 
     private static int maxTimeouts = 5;
-    private static int timeout = 3000;
+    private static int timeout = 4000;
     private static int bufSize = 8192;
 
     public UDPFileSender(String receiverIp, int port, String filePath, String fileName) {

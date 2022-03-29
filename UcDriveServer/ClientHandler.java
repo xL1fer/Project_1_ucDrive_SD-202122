@@ -105,6 +105,12 @@ public class ClientHandler extends Thread {
                     case "cd":
                         oos.writeUTF(changeDirectory(joinString(opt)));
                         oos.flush();
+
+                        //send information to secondary server about client path
+                        UcDriveServer.saveUsers();
+                        UDPPortManager.addFileTransfer(1, "storage", "users.data");
+                        new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
+
                         break;
                     // make directory
                     case "mkdir":
@@ -144,6 +150,12 @@ public class ClientHandler extends Thread {
                         oos.flush();
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         UcDriveServer.saveUsers();
+
+                        //send information to secondary server about client password
+                        UcDriveServer.saveUsers();
+                        UDPPortManager.addFileTransfer(1, "storage", "users.data");
+                        new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
+
                         return;
                     // download files from server
                     case "dw":

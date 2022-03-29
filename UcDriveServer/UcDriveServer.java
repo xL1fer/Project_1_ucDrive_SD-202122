@@ -76,8 +76,7 @@ public class UcDriveServer {
                 //save users
                 System.out.println("\nClosing down server!");
                 saveUsers();
-                //UDPPortManager.addFileTransfer(2, fileEntry.toString(), "");
-                //new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
+                sc.close();
             }
         }));
 
@@ -123,7 +122,8 @@ public class UcDriveServer {
 
         // heartbeat UDP socket (opened in the primary server)
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
-        
+        loadUsers();
+
         // open socket for clients communication
         try (ServerSocket listenSocket = new ServerSocket(Integer.parseInt(myServerPort))) {
             System.out.println("\n:: Listening on port " + myServerPort + " ::");
@@ -215,6 +215,10 @@ public class UcDriveServer {
             ObjectInputStream ois = new ObjectInputStream(fis);
             users = (ArrayList<User>) ois.readObject();
 
+            for(User u : users){
+                u.setLogged(false);
+            }
+
             fis.close();
         } catch (FileNotFoundException e) {
             //System.out.println("FileNotFound:" + e.getMessage());
@@ -271,7 +275,6 @@ public class UcDriveServer {
         return null;
     }
 
-    // TODO: config variable for heartbet time and timeout
     // function to check while "other server" is running
     private static boolean checkServer(String serverIp, int serverPort) {
         int heartbeat = 0;
@@ -378,7 +381,8 @@ public class UcDriveServer {
                 String filePath = "";
                 for (int i = 0; i < fileNames.length - 1; i++) {
                     filePath += fileNames[i];
-                    filePath += "\\";
+                    if(i != fileNames.length - 2)
+                        filePath += "\\";
                 }
 
                 UDPPortManager.addFileTransfer(1, filePath, fileName);
