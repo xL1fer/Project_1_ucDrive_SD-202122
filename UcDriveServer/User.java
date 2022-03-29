@@ -24,10 +24,12 @@ import java.io.Serializable;
 public class User implements Serializable {
     private ClientAuth clientData;
     private String curPath;
+    private boolean isLogged;
 
     public User(ClientAuth auth) {
         clientData = auth;
         curPath = "storage\\Users\\" + clientData.getUsername();
+        isLogged = false;
         createDirectory();
     }
 
@@ -62,5 +64,13 @@ public class User implements Serializable {
 
     public String toString() {
         return "User: " + clientData.getUsername() + ", Password: " + clientData.getPassword();
+    }
+
+    public boolean getLogged(){
+        return isLogged;
+    }
+    
+    public void setLogged(boolean status){
+        isLogged = status;
     }
 }

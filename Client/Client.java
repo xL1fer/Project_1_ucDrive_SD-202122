@@ -58,6 +58,20 @@ public class Client {
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
 
+        //add hook to catch SIGINT
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                try {
+                    oos.writeUTF("exit");
+                    oos.flush();
+                    s.close();
+                } catch (IOException e) {
+                    System.out.println("IO: " + e.getMessage());
+                }
+                sc.close();;
+            }
+        }));
+
         /*
         *   Start by getting each server information
         */
@@ -170,7 +184,6 @@ public class Client {
 
     // user authentication method
     private static void sendAuthentication(){
-        // TODO: make so that an user can only be logged in one device at a time?
         // authentication loop
         while (true) {
             try {
@@ -187,10 +200,15 @@ public class Client {
                 // send authentication data to server
                 oos.writeObject(auth);
 
-                // server answers with boolean saying if client is authenticated or not
-                if (ois.readBoolean()) {
+                // server answers with int saying if client is authenticated or not, -1 for wrong auth, 0 for already logged and 1 for success
+                int opt = ois.readInt();
+
+                if (opt == 1) {
                     System.out.println("> Logged in as: " + username + "\n");
                     break;
+                }
+                else if(opt == 0){
+                    System.out.println("> User already logged in.");
                 }
                 else {
                     System.out.println("> Invalid username/password.");
@@ -531,7 +549,6 @@ public class Client {
                         onServerDirectory = !onServerDirectory;
                         break;
                     // ignore empty input
-                    // TODO: if user inputs a string starting with spaces and has letters in the middle, it should print "command not found"
                     case "":
                         if (onServerDirectory) {
                             oos.writeUTF("dir");

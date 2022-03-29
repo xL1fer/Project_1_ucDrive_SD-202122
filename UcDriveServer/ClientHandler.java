@@ -52,17 +52,27 @@ public class ClientHandler extends Thread {
                 for (User u : UcDriveServer.users) {
                     //System.out.println(u);
                     if (u.compareAuth(auth)) {
+
+                        //check if user already logged
+                        if(u.getLogged()){
+                            System.out.println("<ClientHandler> Client " + auth.getUsername() + " is already logged.");
+                            oos.writeInt(0); // 0 for already logged
+                            oos.flush();
+                            continue outer;
+                        }
+
                         System.out.println("<ClientHandler> Client " + auth.getUsername() + " authenticated");
                         this.user = u;
                         this.isAuthenticated = true;
-                        oos.writeBoolean(true);
+                        this.user.setLogged(true);
+                        oos.writeInt(1); // 1 for success
                         oos.flush();
                         break outer;
                     }
                     
                 }
 
-                oos.writeBoolean(false);
+                oos.writeInt(-1); // -1 for wrong name and/or password
                 oos.flush();
 
             } catch (ClassNotFoundException e) {
@@ -73,6 +83,7 @@ public class ClientHandler extends Thread {
                 return;
             }
         }
+
         File file;
         String dirPath, curPath, res, opt[];
         // commands loop
@@ -128,11 +139,11 @@ public class ClientHandler extends Thread {
                         break;
                     // change password
                     case "pw":
-                        // TODO: when changing password we need to save it on the file
                         user.getClientData().setPassword(opt[1]);
                         oos.writeUTF("> Password changed.");
                         oos.flush();
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
+                        UcDriveServer.saveUsers();
                         return;
                     // download files from server
                     case "dw":
@@ -194,6 +205,7 @@ public class ClientHandler extends Thread {
                         break;
                     // exit
                     case "exit":
+                        user.setLogged(false);
                         System.out.println("> Client " + user.getClientData().getUsername() + " left.");
                         return;
                     default:
@@ -228,7 +240,7 @@ public class ClientHandler extends Thread {
             String directoryList[] = user.getCurPath().split("\\\\");
 
             //restrict to home path
-            if (directoryList.length < 3) {
+            if (directoryList.length < 4) {
                 return "> Cannot leave home folder.";
             }
 

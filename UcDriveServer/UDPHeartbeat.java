@@ -28,7 +28,7 @@ public class UDPHeartbeat extends Thread {
     private int heartbeatDelay;
 
     public UDPHeartbeat(String serverIp, int port, int heartbeatDelay) {
-        this.serverIp = serverIp;
+        //this.serverIp = serverIp;
         this.port = port;
         this.heartbeatDelay = heartbeatDelay - 100;
         try {

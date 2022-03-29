@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.io.*;
+import java.nio.file.Files;
 
 // suppress unchecked casts warning
 @SuppressWarnings("unchecked")
@@ -68,6 +69,15 @@ public class UcDriveServer {
 
         // save "user.data" file
         saveUsers();
+
+        //add hook to catch SIGINT
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                //save users
+                System.out.println("\nClosing down server!");
+                saveUsers();
+            }
+        }));
 
         /*
         *   Get each server information
@@ -135,8 +145,6 @@ public class UcDriveServer {
             System.out.println("<UcDriveServer> Listen: " + e.getMessage());
         }
 
-        //TODO: more saves for the users file (:
-        //saveUsers();
         sc.close();
     }
 
@@ -167,12 +175,16 @@ public class UcDriveServer {
                     break;
                 // remove user
                 case "remove":
-                    // TODO: delete user directory aswell and remove user and user directory from secondary server
                     if (words.length < 2) {
                         System.out.println("> Too few arguments.");
                         break;
                     }
-                    removeUser(words);
+
+                    User delUser = removeUser(words);
+                    if(delUser != null){
+                        File toDel = new File(delUser.getCurPath());
+                        deleteDir(toDel);
+                    }
                     break;
                 // list users and corresponding passwords
                 case "list":
@@ -189,7 +201,7 @@ public class UcDriveServer {
     }
 
     // save users configuration file (syncronized method to prevent threads concurrency)
-    private static synchronized void saveUsers() {
+    public static synchronized void saveUsers() {
         try {
             FileOutputStream fos = new FileOutputStream("storage\\users.data");
             ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -252,18 +264,19 @@ public class UcDriveServer {
     }
 
     // remove user from "global" array list
-    private static void removeUser(String words[]) {
+    private static User removeUser(String words[]) {
         // checks if client with username exists
         for (User u : users) {
             if (u.getClientData().getUsername().equals(words[1])) {
                 users.remove(u);
                 System.out.println("> User " + words[1] + " successfully removed.");
-                return;
+                return u;
             }
         }
 
         // client not found
         System.out.println("> User " + words[1] + " not found.");
+        return null;
     }
 
     // TODO: config variable for heartbet time and timeout
@@ -314,6 +327,20 @@ public class UcDriveServer {
         aSocket.close();
 
         return true;
+    }
+
+    // delete specified file / directory
+    private static void deleteDir(File file) {
+        File[] contents = file.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                if (!Files.isSymbolicLink(f.toPath())) {
+                    deleteDir(f);
+                }
+            }
+        }
+        if (!file.delete())
+            System.out.println("> Could not delete file \"" + file + "\".");
     }
 
     // replicate all files from the primary server to the secondary server
