@@ -90,7 +90,7 @@ public class UDPPortManager extends Thread {
                         // primary server wants to send a file
                         case 1:
                             availablePort = getAvailablePort();
-                            System.out.println("<UDPPortManager> (Secondary) Available Port: " + availablePort);
+                            //System.out.println("<UDPPortManager> (Secondary) Available Port: " + availablePort);
                             if (availablePort < 0) {
                                 System.out.println("<UDPPortManager> (Secondary): Invalid available port");
                             }
