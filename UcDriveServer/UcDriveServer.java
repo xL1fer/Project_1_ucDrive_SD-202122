@@ -76,6 +76,8 @@ public class UcDriveServer {
                 //save users
                 System.out.println("\nClosing down server!");
                 saveUsers();
+                //UDPPortManager.addFileTransfer(2, fileEntry.toString(), "");
+                //new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);
             }
         }));
 
@@ -112,22 +114,12 @@ public class UcDriveServer {
             return;
         }
 
-        /*
-        *   Start initializing server with corresponding functionalities (primary or secondary)
-        */
-        // create UDPPortManager instance for secondary server (will be listening for any file changes)
-        UDPPortManager udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
-
         // check if the other server is up
         if (!checkServer(otherServerIp, Integer.parseInt(otherServerPort))) {
             System.out.println("<UcDriveServer> Unexpected error");
-            udpPortReceiver.interrupt();
             sc.close();
             return;
         }
-
-        // this is now the primary server, we can close udpPortReceiver
-        udpPortReceiver.interrupt();
 
         // heartbeat UDP socket (opened in the primary server)
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
@@ -283,7 +275,8 @@ public class UcDriveServer {
     // function to check while "other server" is running
     private static boolean checkServer(String serverIp, int serverPort) {
         int heartbeat = 0;
-
+        otherServerUp = false;
+        UDPPortManager udpPortReceiver = null;
         // open socket to try to communicate with primary server
         DatagramSocket aSocket;
         try {
@@ -307,18 +300,40 @@ public class UcDriveServer {
                 DatagramPacket reply = new DatagramPacket(buffer, buffer.length);
                 aSocket.receive(reply);
 
+                //if the other server was down and turned on now
+                if(otherServerUp == false){
+                    /*
+                    *   Start initializing server with corresponding functionalities (primary or secondary)
+                    */
+                    // create UDPPortManager instance for secondary server (will be listening for any file changes)
+                    udpPortReceiver = new UDPPortManager(otherServerIp, portManager, false);
+                }
+                
+                otherServerUp = true;
+
                 heartbeat = 0;
                 System.out.println("<UcDriveServer> Received heartbeat");
             } catch(SocketTimeoutException e) {
                 System.out.println("<UcDriveServer> Heartbeat failed");
                 heartbeat++;
                 if (heartbeat > maxFailedHearbeats) {
+                    otherServerUp = false;
+
+                    //close the receiver
+                    if(udpPortReceiver != null)
+                        udpPortReceiver.interrupt();
+
                     System.out.println("<UcDriveServer> Server Ip \"" + serverIp + "\" with port \"" + serverPort + "\" is down");
                     break;
                 }
 
             } catch(IOException e) {
                 System.out.println("<UcDriveServer> IO: " + e.getMessage());
+
+                //close the receiver
+                if(udpPortReceiver != null)
+                    udpPortReceiver.interrupt();
+
                 aSocket.close();
                 return false;
             }

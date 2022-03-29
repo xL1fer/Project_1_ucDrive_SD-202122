@@ -51,6 +51,7 @@ public class UDPHeartbeat extends Thread {
 
                 if (UcDriveServer.otherServerUp == false) {
                     //UcDrive_Server.replicateFiles()
+                    System.out.println("<UcDriveServer> Secondary server up, replicating files.");
                     UcDriveServer.otherServerUp = true;
                     UcDriveServer.replicateFiles(null);
                     new UDPPortManager(UcDriveServer.otherServerIp, UcDriveServer.portManager, true);

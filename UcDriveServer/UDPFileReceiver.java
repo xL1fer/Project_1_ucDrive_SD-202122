@@ -99,7 +99,7 @@ public class UDPFileReceiver extends Thread {
                 aSocket.receive(ack);
 
                 if (ack.getData()[0] == (byte)0xAA) {
-                    System.out.println("<UDPFileReceiver> File received");
+                    System.out.println("<UDPFileReceiver> File " + filePath + " received");
                     break;
                 }
                 else {

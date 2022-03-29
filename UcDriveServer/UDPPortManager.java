@@ -68,7 +68,7 @@ public class UDPPortManager extends Thread {
             int opt;
             try {
                 aSocket = new DatagramSocket(port);
-                //System.out.println("<UDPPortManager> (Secondary): Opened UDP socket for listening.");
+                System.out.println("<UDPPortManager> (Secondary): Opened UDP socket for listening.");
                 aSocket.setSoTimeout(timeout);
             } catch (SocketException e) {
                 System.out.println("<UDPPortManager> (Secondary) Socket: " + e.getMessage());
@@ -186,7 +186,7 @@ public class UDPPortManager extends Thread {
             FileTransferType file =  filesToTransfer.get(0);
             filesToTransfer.remove(0);
 
-            //System.out.println("<UDPPortManager> (Primary) Sending file with option: " + file.getOpt() + " with path: " + file.getFilePath() + " and name: " + file.getFileName() + ".");
+            System.out.println("<UDPPortManager> (Primary) Sending file with option: " + file.getOpt() + " with path: " + file.getFilePath() + " and name: " + file.getFileName() + ".");
             try {
                 switch (file.getOpt()) {
                     // send file to secondary, but first receive port
