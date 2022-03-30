@@ -25,11 +25,21 @@ public class User implements Serializable {
     private ClientAuth clientData;
     private String curPath;
     private boolean isLogged;
+    private String department;          // client department
+    private String phoneNumber;         // client phone
+    private String address;             // client address
+    private String identification;      // client identification
+    private String idExpiratonDate;     // client identification expiration date
 
-    public User(ClientAuth auth) {
+    public User(ClientAuth auth, String department, String phoneNumber, String address, String identification, String idExpiratonDate) {
         clientData = auth;
         curPath = "storage\\Users\\" + clientData.getUsername();
         isLogged = false;
+        this.department = department;
+        this.phoneNumber = phoneNumber;
+        this.address = address;
+        this.identification = identification;
+        this.idExpiratonDate = idExpiratonDate;
         createDirectory();
     }
 
@@ -62,8 +72,45 @@ public class User implements Serializable {
         return curPath.substring(14);
     }
 
-    public String toString() {
-        return "User: " + clientData.getUsername() + ", Password: " + clientData.getPassword();
+
+    public String getIdExpiratonDate() {
+        return idExpiratonDate;
+    }
+
+    public void setIdExpiratonDate(String idExpiratonDate) {
+        this.idExpiratonDate = idExpiratonDate;
+    }
+
+    public String getIdentification() {
+        return identification;
+    }
+
+    public void setIdentification(String identification) {
+        this.identification = identification;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
     }
 
     public boolean getLogged(){
@@ -72,5 +119,9 @@ public class User implements Serializable {
     
     public void setLogged(boolean status){
         isLogged = status;
+    }
+
+    public String toString() {
+        return "User: " + clientData.getUsername() + ", Password: " + clientData.getPassword() + ", Department: " + this.department + ", Phone Number: " + this.phoneNumber + ", Address: " + this.address + ", Identification: " + this.identification + ", Id Expiraton Date: " + this.idExpiratonDate;
     }
 }

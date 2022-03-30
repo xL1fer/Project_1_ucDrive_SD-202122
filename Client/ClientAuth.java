@@ -1,12 +1,33 @@
+/*
+ *  "ClientAuth.java"
+ * 
+ *  ====================================
+ *
+ *  Universidade de Coimbra
+ *  Faculdade de Ciências e Tecnologia
+ *  Departamento de Engenharia Informatica
+ * 
+ *  Alexandre Gameiro Leopoldo - 2019219929
+ *  Luís Miguel Gomes Batista  - 2019214869
+ * 
+ *  ====================================
+ * 
+ *  "ucDrive Project"
+ */
+
 import java.io.Serializable;
 
-public class ClientAuth implements Serializable{
-    private String username;
-    private String password;
+/**
+ * Client Auth Class responsible to
+ * help handle user authentication
+ */
+public class ClientAuth implements Serializable {
+    private String username;            // client username
+    private String password;            // client password
     
-    public ClientAuth(String username, String password){
-        this.setUsername(username);
-        this.setPassword(password);
+    public ClientAuth(String username, String password) {
+        this.username = username;
+        this.password = password;
     }
 
     public String getUsername() {
@@ -25,7 +46,7 @@ public class ClientAuth implements Serializable{
         this.password = password;
     }
 
-    public String toString(){
+    public String toString() {
         return "User: " + username + ", Password: " + password;
     }
 }

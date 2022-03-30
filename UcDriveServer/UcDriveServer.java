@@ -74,7 +74,7 @@ public class UcDriveServer {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
                 //save users
-                System.out.println("\nClosing down server!");
+                System.out.println("\n<UcDriveServer> Server closing...");
                 saveUsers();
                 sc.close();
             }
@@ -145,7 +145,7 @@ public class UcDriveServer {
         String opt;
 
         while (true) {
-            System.out.println("\nAdd client: \"add [username] [password]\"");
+            System.out.println("\nAdd client: \"add [username] [password] [department] [phone number] [address] [identification] [id expiraton date]\"");
             System.out.println("Remove client: \"remove [username]\"");
             System.out.println("List clients and passwords: \"list\"");
             System.out.println("Leave menu: \"quit\"");
@@ -159,7 +159,7 @@ public class UcDriveServer {
                     return;
                 // add user
                 case "add":
-                    if (words.length < 3) {
+                    if (words.length < 8) {
                         System.out.println("> Too few arguments.");
                         break;
                     }
@@ -182,7 +182,7 @@ public class UcDriveServer {
                 case "list":
                     for (User u : users ) {
                         u.createDirectory();
-                        System.out.println(u.getClientData().toString());
+                        System.out.println(u.toString());
                     }
                     break;
                 default:
@@ -255,7 +255,7 @@ public class UcDriveServer {
 
         // client can be added
         ClientAuth newClientAuth = new ClientAuth(words[1], words[2]);
-        users.add(new User(newClientAuth));
+        users.add(new User(newClientAuth, words[3], words[4], words[5], words[6], words[7]));
         System.out.println("> Added user " + words[1]);
     }
 

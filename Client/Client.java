@@ -62,9 +62,11 @@ public class Client {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
                 try {
-                    oos.writeUTF("exit");
-                    oos.flush();
-                    s.close();
+                    if (!s.isClosed()) {
+                        oos.writeUTF("exit");
+                        oos.flush();
+                        s.close();
+                    }
                 } catch (IOException e) {
                     System.out.println("IO: " + e.getMessage());
                 }
@@ -92,7 +94,8 @@ public class Client {
 
         // close socket and scanner before exiting
         try {
-            s.close();
+            if (!s.isClosed())
+                s.close();
         } catch (IOException e) {
             System.out.println("IO: " + e.getMessage());
         }
@@ -225,9 +228,9 @@ public class Client {
 
     // client operations handler function
     private static void clientOperations() {
-        String[] opt;           // input split string
-        String response;        // server response
-        File file;              // file object used to instantiate files
+        String[] opt;                   // input split string
+        String response;                // server response
+        File file;                      // file object used to instantiate files
 
         // our main loop
         while (true) {
@@ -242,7 +245,11 @@ public class Client {
                 }
 
                 // get user commands
-                opt = sc.nextLine().split(" ");
+                try {
+                    opt = sc.nextLine().split(" ");
+                } catch (Exception e) {
+                    continue;
+                }
 
                 // in case user enters the string " " for example
                 if(opt.length == 0) {
@@ -252,6 +259,24 @@ public class Client {
                 }
 
                 switch (opt[0]) {
+                    // "help" command
+                    case "?":
+                        if (onServerDirectory) {
+                            oos.writeUTF("error");
+                            oos.flush();
+                        }
+                        System.out.println("\t> ls\t\t\t<list files in current directory>");
+                        System.out.println("\t> cd [dir_name/..]\t<change current directory>");
+                        System.out.println("\t> mkdir [dir_name]\t<make a new directory>");
+                        System.out.println("\t> rm [dir_name]\t\t<remove specified directory>");
+                        System.out.println("\t> pw [new_password]\t<change user password>");
+                        System.out.println("\t> dw [file_name]\t<download specified file>");
+                        System.out.println("\t> up [file_name]\t<upload specified file>");
+                        System.out.println("\t> clear\t\t\t<clear terminal>");
+                        System.out.println("\t> sv\t\t\t<change servers information>");
+                        System.out.println("\t> ch\t\t\t<change between server and local directory>");
+                        System.out.println("\t> exit\t\t\t<exit program>");
+                        break;
                     // list directory
                     case "ls":
                         if (onServerDirectory) {
@@ -535,11 +560,6 @@ public class Client {
                         onServerDirectory = true;
 
                         break;
-                    // exit program
-                    case "exit":
-                        oos.writeUTF("exit");
-                        oos.flush();
-                        return;
                     // change between local and server directories
                     case "ch":
                         if (onServerDirectory == false) {
@@ -548,6 +568,11 @@ public class Client {
                         }
                         onServerDirectory = !onServerDirectory;
                         break;
+                    // exit program
+                    case "exit":
+                        oos.writeUTF("exit");
+                        oos.flush();
+                        return;
                     // ignore empty input
                     case "":
                         if (onServerDirectory) {
@@ -567,7 +592,7 @@ public class Client {
                 // try to reconnect to server
                 if (!connectToServer())
                     return;
-
+                
                 // re-send authentication
                 sendAuthentication();
 

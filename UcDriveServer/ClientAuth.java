@@ -22,12 +22,12 @@ import java.io.Serializable;
  * help handle user authentication
  */
 public class ClientAuth implements Serializable {
-    private String username;        // client username
-    private String password;        // client password
+    private String username;            // client username
+    private String password;            // client password
     
     public ClientAuth(String username, String password) {
-        this.setUsername(username);
-        this.setPassword(password);
+        this.username = username;
+        this.password = password;
     }
 
     public String getUsername() {
