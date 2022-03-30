@@ -57,12 +57,13 @@ public class Client {
         connectedServer = 0;
         onServerDirectory = true;
         localDirectory = System.getProperty("user.dir");
+        s = null;
 
         //add hook to catch SIGINT
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (!s.isClosed()) {
+                    if (s != null && !s.isClosed()) {
                         oos.writeUTF("exit");
                         oos.flush();
                         s.close();
@@ -70,7 +71,7 @@ public class Client {
                 } catch (IOException e) {
                     System.out.println("IO: " + e.getMessage());
                 }
-                sc.close();;
+                sc.close();
             }
         }));
 
@@ -94,7 +95,7 @@ public class Client {
 
         // close socket and scanner before exiting
         try {
-            if (!s.isClosed())
+            if (s != null && !s.isClosed())
                 s.close();
         } catch (IOException e) {
             System.out.println("IO: " + e.getMessage());
@@ -178,7 +179,7 @@ public class Client {
             } catch (IOException e1) {
                 // there's an error connecting to the secondary server
                 // no servers online
-                System.out.println("> Secondary server offline.\n> No server online, exiting.");
+                System.out.println("> Secondary server offline.\n> No servers online, exiting.");
                 return false;
             }
         }

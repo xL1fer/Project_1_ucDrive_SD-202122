@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: UcDrive_Server
+Main-Class: UcDriveServer
