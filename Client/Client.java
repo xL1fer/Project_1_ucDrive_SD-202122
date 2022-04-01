@@ -209,6 +209,7 @@ public class Client {
 
                 if (opt == 1) {
                     System.out.println("> Logged in as: " + username + "\n");
+                    System.out.println("> Type \"?\" for a list of available commands.");
                     break;
                 }
                 else if(opt == 0){
