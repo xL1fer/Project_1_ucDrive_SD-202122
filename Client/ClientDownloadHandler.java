@@ -19,8 +19,7 @@ import java.io.*;
 import java.net.*;
 
 /**
- * ClientDownloadHandler class responsible for handling
- * client downloads
+ * ClientDownloadHandler class responsible for handling client downloads.
  */
 public class ClientDownloadHandler extends Thread {
     // class atributes
@@ -31,7 +30,12 @@ public class ClientDownloadHandler extends Thread {
     private int bufSize;
     private byte buffer[];
 
-    // class constructor
+    /**
+     * Creates a ClientDownloadHandler thread that will download the file sent by the server.
+     * @param serverIp server ip
+     * @param serverPort server port
+     * @param localPath path to where the file will be downloaded
+     */
     public ClientDownloadHandler(String serverIp, int serverPort, String localPath) {
         this.serverIp = serverIp;
         this.serverPort = serverPort;

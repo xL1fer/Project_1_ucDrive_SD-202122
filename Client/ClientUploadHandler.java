@@ -19,8 +19,7 @@ import java.io.*;
 import java.net.*;
 
 /**
- * ClientUploadHandler class responsible for handling
- * client uploads
+ * ClientUploadHandler class responsible for handling client uploads.
  */
 public class ClientUploadHandler extends Thread{
     // class atributes
@@ -31,7 +30,12 @@ public class ClientUploadHandler extends Thread{
     private int bufSize;
     private byte buffer[];
 
-    // class constructor
+    /**
+     * Creates a ClientUploadHandler thread that will upload the file to the server.
+     * @param serverIp server ip
+     * @param serverPort server port
+     * @param localPath path of the file to be uploaded
+     */
     public ClientUploadHandler(String serverIp, int serverPort, String localPath) {
         this.serverIp = serverIp;
         this.serverPort = serverPort;

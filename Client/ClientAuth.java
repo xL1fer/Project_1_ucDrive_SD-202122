@@ -18,13 +18,17 @@
 import java.io.Serializable;
 
 /**
- * Client Auth Class responsible to
- * help handle user authentication
+ * Client Auth Class responsible to help handle user authentication.
  */
 public class ClientAuth implements Serializable {
     private String username;            // client username
     private String password;            // client password
     
+    /**
+     * Creates a new ClientAuth with the given information.
+     * @param username the client's username
+     * @param password the client's password
+     */
     public ClientAuth(String username, String password) {
         this.username = username;
         this.password = password;

@@ -26,8 +26,7 @@ import java.nio.file.Files;
 @SuppressWarnings("unchecked")
 
 /**
- * Server class responsible for handling
- * the server application
+ * Server class responsible for handling the server application.
  */
 public class UcDriveServer {
     protected static String myServerIp;                 // server Ip of this server instance
@@ -70,16 +69,6 @@ public class UcDriveServer {
         // save "user.data" file
         saveUsers();
 
-        //add hook to catch SIGINT
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            public void run() {
-                //save users
-                System.out.println("\n<UcDriveServer> Server closing...");
-                saveUsers();
-                sc.close();
-            }
-        }));
-
         /*
         *   Get each server information
         */
@@ -120,6 +109,16 @@ public class UcDriveServer {
             return;
         }
 
+        //add hook to catch SIGINT
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            public void run() {
+                //save users
+                System.out.println("\n<UcDriveServer> Server closing...");
+                saveUsers();
+                sc.close();
+            }
+        }));
+
         // heartbeat UDP socket (opened in the primary server)
         new UDPHeartbeat(myServerIp, Integer.parseInt(myServerPort), heartbeatDelay);
         loadUsers();
@@ -140,7 +139,9 @@ public class UcDriveServer {
         sc.close();
     }
 
-    // function to manage users configuration file
+    /**
+     * Manages user configuration.
+     */
     private static void manageUserData() {
         String opt;
 
@@ -192,7 +193,9 @@ public class UcDriveServer {
         }
     }
 
-    // save users configuration file (syncronized method to prevent threads concurrency)
+    /**
+     * Saves the users array into a file.
+     */
     public static synchronized void saveUsers() {
         try {
             FileOutputStream fos = new FileOutputStream("storage\\users.data");
@@ -232,7 +235,10 @@ public class UcDriveServer {
         }
     }
 
-    // function to clear terminal
+     /**
+     * Cleans the terminal. 
+     * May only work for Windows.
+     */
     private static void clearTerminal(){
         try {
             new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
@@ -243,7 +249,10 @@ public class UcDriveServer {
         }
     }
 
-    // add user to "global" array list
+    /**
+     * Adds a user to the users list.
+     * @param words string array containing information about the new user
+     */
     private static void addUser(String words[]) {
         // checks if client with username already exists
         for (User u : users) {
@@ -259,7 +268,11 @@ public class UcDriveServer {
         System.out.println("> Added user " + words[1]);
     }
 
-    // remove user from "global" array list
+    /**
+     * Removes a user from the users list.
+     * @param words string array containing information about the user to remove
+     * @return the removed user or null if no user was found
+     */
     private static User removeUser(String words[]) {
         // checks if client with username exists
         for (User u : users) {
@@ -275,7 +288,13 @@ public class UcDriveServer {
         return null;
     }
 
-    // function to check while "other server" is running
+    /**
+     * Checks if the other server is turned on.
+     * This will block this server until the other server is unreachable.
+     * @param serverIp server IP
+     * @param serverPort server port
+     * @return true if the other server is turned off, false otherwise
+     */
     private static boolean checkServer(String serverIp, int serverPort) {
         int heartbeat = 0;
         otherServerUp = false;
@@ -347,7 +366,10 @@ public class UcDriveServer {
         return true;
     }
 
-    // delete specified file / directory
+     /**
+     * Deletes a directory.
+     * @param file name of the directory to be deleted
+     */
     private static void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -361,7 +383,11 @@ public class UcDriveServer {
             System.out.println("> Could not delete file \"" + file + "\".");
     }
 
-    // replicate all files from the primary server to the secondary server
+    /**
+     * Replicates all the files from this server to the secondary server.
+     * This uses recursion.
+     * @param file name of the file to be sent, null if all
+     */
     protected static void replicateFiles(File file) {
         // start directory
         if (file == null) {
@@ -384,7 +410,7 @@ public class UcDriveServer {
                     if(i != fileNames.length - 2)
                         filePath += "\\";
                 }
-
+                //add file to the transfer list
                 UDPPortManager.addFileTransfer(1, filePath, fileName);
             }
         }

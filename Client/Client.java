@@ -21,8 +21,7 @@ import java.util.Scanner;
 import java.io.*;
 
 /**
- * Client class responsible for handling
- * the client application
+ * Client class responsible for handling the client application.
  */
 public class Client {
     // class atributes
@@ -103,6 +102,9 @@ public class Client {
         sc.close();
     }
 
+    /**
+     * Handles user input and sets the primary and secondery server IP and port.
+     */
     private static void getServerIp() {
         while(true){
             System.out.print("> Primary Server IP [localhost]: ");
@@ -139,7 +141,10 @@ public class Client {
         }
     }
 
-    // method to stablish connection with which ever is the primary server
+    /**
+     * Returns true if the client has connected to the primary server.
+     * @return true if the client has connected, false otherwise
+     */
     private static boolean connectToServer() {
         System.out.println("> Retrieving online servers...");
 
@@ -186,7 +191,10 @@ public class Client {
         return true;
     }
 
-    // user authentication method
+    /**
+     * Handles user authentication information and sends it to the server.
+     * If the authentication is wrong, the user has to input it again.
+     */
     private static void sendAuthentication(){
         // authentication loop
         while (true) {
@@ -228,7 +236,9 @@ public class Client {
         }
     }
 
-    // client operations handler function
+    /**
+     * Handles all client operations.
+     */
     private static void clientOperations() {
         String[] opt;                   // input split string
         String response;                // server response
@@ -604,7 +614,10 @@ public class Client {
         }
     }
 
-    // method to get all files from a given directory (will always be localDirectory in this case)
+    /**
+     * Returns all files in the current local directory.
+     * @return string with all files in current directory
+     */
     private static String getFileList() {
         File f = new File(localDirectory);
         String files[] = f.list();
@@ -616,7 +629,11 @@ public class Client {
         return ls;
     }
 
-    // change current directory 
+    /**
+     * Changes current local directory.
+     * @param path name of the directory to change to
+     * @return string containing information about wether the change was successful
+     */
     private static String changeDirectory(String path) {
         if (path.equals("..")) {
             String directoryList[] = localDirectory.split("\\\\");
@@ -661,7 +678,11 @@ public class Client {
         return "> Invalid path.";
     }
 
-    // function to create a directory
+    /**
+     * Creates a directory.
+     * @param dirName name of the directory to be created
+     * @return empty string if successful or string informing that the directory already exists
+     */
     private static String createDirectory(String dirName) {
         File f = new File(localDirectory + "\\" + dirName);
         //System.out.println("Dir: " + f);
@@ -675,7 +696,10 @@ public class Client {
         return "> Directory already exists.";
     }
 
-    // delete a file or all files within a folder
+    /**
+     * Deletes a directory.
+     * @param file name of the directory to be deleted
+     */
     private static void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -690,7 +714,11 @@ public class Client {
         }
     }
     
-    // method to join a string array except the first element
+    /**
+     * Joins a string array without the first index.
+     * @param array string array to be joined
+     * @return string created by joining the given string array
+     */
     private static String joinString(String array[]) {
         String str = "";
         for (int i = 1; i < array.length; i++) {
@@ -701,7 +729,10 @@ public class Client {
         return str;
     }
 
-    // clear terminal function (may only work on windows)
+    /**
+     * Cleans the terminal. 
+     * May only work for Windows.
+     */
     private static void clearTerminal() {
         try {
             new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();

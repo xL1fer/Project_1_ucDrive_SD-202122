@@ -31,6 +31,15 @@ public class User implements Serializable {
     private String identification;      // client identification
     private String idExpiratonDate;     // client identification expiration date
 
+    /**
+     * Creates a new User with the given information.
+     * @param auth user's authentication
+     * @param department user's department
+     * @param phoneNumber user's phone number
+     * @param address user's address
+     * @param identification user's identification
+     * @param idExpiratonDate user's ID expirationDate
+     */
     public User(ClientAuth auth, String department, String phoneNumber, String address, String identification, String idExpiratonDate) {
         clientData = auth;
         curPath = "storage\\Users\\" + clientData.getUsername();
@@ -43,12 +52,20 @@ public class User implements Serializable {
         createDirectory();
     }
 
+    /**
+     * Compares the given authentication to this.
+     * @param auth authentication to be compared
+     * @return
+     */
     public boolean compareAuth(ClientAuth auth) {
         if (clientData.getUsername().equals(auth.getUsername()) && clientData.getPassword().equals(auth.getPassword()))
             return true;
         return false;
     }
 
+    /**
+     * Creates this user's directory.
+     */
     public void createDirectory() {
         File f = new File("storage\\Users\\"+ clientData.getUsername());
         if (f.exists() == false) {

@@ -19,7 +19,7 @@ import java.io.*;
 import java.net.*;
 
 /**
- * Upload server-sided class
+ * Upload server-sided class.
  */
 public class ServerUploadHandler extends Thread {
     private DataOutputStream dos;           // send files
@@ -28,6 +28,10 @@ public class ServerUploadHandler extends Thread {
     private int bufSize = 8192;             // packet buffer size
     private byte buffer[];                  // packet buffer
     
+    /**
+     * Creates a new ServerUploadHandler to upload a file to the client.
+     * @param filePath path of the file to be uploaded
+     */
     public ServerUploadHandler(String filePath) {
         this.buffer = new byte[bufSize];
         this.filePath = filePath;
@@ -76,7 +80,10 @@ public class ServerUploadHandler extends Thread {
         return;
     }
 
-    // get port created by OS
+    /**
+     * Returns current port.
+     * @return int with the port
+     */
     public int getPort() {
         return this.listenSocket.getLocalPort();
     }

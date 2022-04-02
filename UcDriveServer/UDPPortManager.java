@@ -21,8 +21,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 
 /**
- * Class to open ports for file replication
- * (fail over)
+ * Class to open ports for file replication (failover).    
  */
 public class UDPPortManager extends Thread {
     private DatagramSocket aSocket;
@@ -33,6 +32,12 @@ public class UDPPortManager extends Thread {
     private static int maxTimeouts = 5;
     private static int timeout = 2000;
 
+    /**
+     * Creates a new UDPPortManager to send or receive files.
+     * @param otherServerIp other server IP
+     * @param port port to use
+     * @param isPrimary true if this is the primary server, false otherwise
+     */
     public UDPPortManager(String otherServerIp, int port, boolean isPrimary) {
         this.otherServerIp = otherServerIp;
         this.port = port;
@@ -162,6 +167,9 @@ public class UDPPortManager extends Thread {
         }
     }
 
+    /**
+     * Empties the file transfer queue.
+     */
     synchronized private void emptyQueue() {
         int availablePort;
         byte buffer[] = new byte[4];
@@ -242,6 +250,10 @@ public class UDPPortManager extends Thread {
 
     }
 
+    /**
+     * Creates a directory.
+     * @param newDir a string specifying the name of the directory to be created
+     */
     private void createDirectory(String newDir) {
         //System.out.println("DirName: " + newDir);
         File f = new File(newDir);
@@ -253,6 +265,10 @@ public class UDPPortManager extends Thread {
         }
     }
     
+    /**
+     * Deletes a directory.
+     * @param file name of the directory to be deleted
+     */
     private void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -266,6 +282,10 @@ public class UDPPortManager extends Thread {
             System.out.println("<UDPPortManager> (Secondary): Could not delete file \"" + file + "\".");
     }
 
+    /**
+     * Finds an available port.
+     * @return int with the port
+     */
     private int getAvailablePort() {
         DatagramSocket bSocket;
         int availablePort;
@@ -281,7 +301,10 @@ public class UDPPortManager extends Thread {
         return availablePort;
     }
 
-    //sends acknowledgement to host that send packet replyTo
+    /**
+     * Sends an acknowledgement to the host that sent the given packet.
+     * @param replyTo packet containing information about the host
+     */
     private void sendAcknowledgement(DatagramPacket replyTo) {
         byte buffer[];
         
@@ -295,6 +318,10 @@ public class UDPPortManager extends Thread {
         }
     }
 
+    /**
+     * Sends an option the secondary server.
+     * @param opt option to send
+     */
     private void sendOpt(int opt) {
         //convert int to byte array
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -315,6 +342,12 @@ public class UDPPortManager extends Thread {
         }
     }
 
+    /**
+     * Adds a file to the file transfer list.
+     * @param opt 1 for file transfer, 2 for creating directory and 3 for deleting directory 
+     * @param filePath path of the file
+     * @param fileName name of the file
+     */
     synchronized public static void addFileTransfer(int opt, String filePath, String fileName) {
         filesToTransfer.add(new FileTransferType(opt, filePath, fileName));
     }

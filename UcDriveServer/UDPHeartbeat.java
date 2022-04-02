@@ -19,7 +19,7 @@ import java.io.*;
 import java.net.*;
 
 /**
- * Heartbeat class (for primary server)
+ * Heartbeat class (for primary server).
  */
 public class UDPHeartbeat extends Thread {
     //private String serverIp;
@@ -27,6 +27,12 @@ public class UDPHeartbeat extends Thread {
     private DatagramSocket aSocket;
     private int heartbeatDelay;
 
+    /**
+     * Creates a new UDPHeartbeat thread to listen for heartbeats from the secondary server.
+     * @param serverIp secondary server IP
+     * @param port port to listen to
+     * @param heartbeatDelay delay between heartbeats
+     */
     public UDPHeartbeat(String serverIp, int port, int heartbeatDelay) {
         //this.serverIp = serverIp;
         this.port = port;

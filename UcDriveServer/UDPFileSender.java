@@ -21,7 +21,7 @@ import java.security.*;
 import java.util.Arrays;
 
 /**
- * File replicate sender class
+ * File replicate sender class.
  */
 public class UDPFileSender extends Thread {
     private String filePath;
@@ -34,6 +34,13 @@ public class UDPFileSender extends Thread {
     private static int timeout = 4000;
     private static int bufSize = 8192;
 
+    /**
+     * Creates a new UDPFileSender thread to send a file.
+     * @param receiverIp receiver server IP
+     * @param port port where the file is going to be sent
+     * @param filePath path of the file
+     * @param fileName name of the file
+     */
     public UDPFileSender(String receiverIp, int port, String filePath, String fileName) {
         this.filePath = filePath;
         this.fileName = fileName;
@@ -159,7 +166,11 @@ public class UDPFileSender extends Thread {
             System.out.println("<UDPFileSender> IO: " + e.getMessage());
         }
     }
-
+    /**
+     * Creates an empty byte array.
+     * @param arraySize size of the array
+     * @return empty byte array
+     */
     private byte[] createEmptyByteArray(int arraySize) {
         byte array[] = new byte[arraySize];
 
@@ -170,9 +181,13 @@ public class UDPFileSender extends Thread {
         return array;
     }
     
-    /*
-    *   Reference: StackOverflow
-    */
+    /**
+     * Method referenced from StackOverflow.
+     * Calculates the SHA256 checksum for the given file.
+     * @param filepath path of the file
+     * @return byte array with the checksum of the given file
+     * @throws IOException IOError
+     */
     private byte[] checksum(String filepath) throws IOException {
         MessageDigest md;
         try {

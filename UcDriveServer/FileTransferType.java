@@ -16,14 +16,19 @@
  */
 
  /**
- * File Transfer class to help handle
- * server replications
+ * File Transfer class to help handle server replications.
  */
 public class FileTransferType {
     private int opt;            // indicates if we need to: 1 - create a file; 2 - make a directory; 3 - delete a directory
     private String filePath;
     private String fileName;
 
+    /**
+     * Creates a new FileTransferType with the given information.
+     * @param opt 1 for file transfer, 2 for creating directory and 3 for deleting directory
+     * @param filePath path of the file
+     * @param fileName name of the file
+     */
     public FileTransferType(int opt, String filePath, String fileName) {
         this.setOpt(opt);
         this.setFilePath(filePath);

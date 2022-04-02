@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.io.*;
 
 /**
- * Client handler server-sided class
+ * Client handler server-sided class.
  */
 public class ClientHandler extends Thread {
     private Socket clientSocket;            // socket to handle the client this thread is responsible with
@@ -29,6 +29,10 @@ public class ClientHandler extends Thread {
     private boolean isAuthenticated;        // indicates if user is authencicated
     private User user;                      // user instance
 
+    /**
+     * Creates a new ClientHandler to handle a user requests.
+     * @param clientSocket socket with the connection to the user
+     */
     public ClientHandler(Socket clientSocket) {
         this.clientSocket = clientSocket;
         this.isAuthenticated = false;
@@ -234,7 +238,10 @@ public class ClientHandler extends Thread {
         }
     }
 
-    // get all files from user server directory
+    /**
+     * Returns all files in the user current server directory.
+     * @return string with all files in user current server directory
+     */
     private String getFileList() {
         File f = new File(user.getCurPath());
         String files[] = f.list();
@@ -246,7 +253,11 @@ public class ClientHandler extends Thread {
         return ls;
     }
 
-    // change user server directory
+    /**
+     * Changes user current server directory.
+     * @param path name of the directory to change to
+     * @return string containing information about wether the change was successful
+     */
     private String changeDirectory(String path) {
         if (path.equals("..")) {
             String directoryList[] = user.getCurPath().split("\\\\");
@@ -290,6 +301,11 @@ public class ClientHandler extends Thread {
         return "> Invalid path.";
     }
 
+    /**
+     * Creates a directory.
+     * @param dirName a string specifying the name of the directory to be created
+     * @return empty string if successful or string informing that the directory already exists
+     */
     private String createDirectory(String dirName) {
         //System.out.println("DirName: " + user.getCurPath() + "\\" + dirName);
         File f = new File(user.getCurPath() + "\\" + dirName);
@@ -304,7 +320,10 @@ public class ClientHandler extends Thread {
         return "> Directory already exists.";
     }
 
-    // delete specified file / directory
+    /**
+     * Deletes a directory.
+     * @param file name of the directory to be deleted
+     */
     private void deleteDir(File file) {
         File[] contents = file.listFiles();
         if (contents != null) {
@@ -318,7 +337,11 @@ public class ClientHandler extends Thread {
             System.out.println("> Could not delete file \"" + file + "\".");
     }
 
-    // function to join a string array except the first element
+    /**
+     * Joins a string array without the first index.
+     * @param array string array to be joined
+     * @return string created by joining the given string array
+     */
     private static String joinString(String array[]) {
         String str = "";
         for (int i = 1; i < array.length; i++) {

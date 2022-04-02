@@ -19,7 +19,7 @@ import java.io.*;
 import java.net.*;
 
 /**
- * Download server-sided class
+ * Download server-sided class.
  */
 public class ServerDownloadHandler extends Thread {
     private DataInputStream dis;            // receive files
@@ -28,6 +28,10 @@ public class ServerDownloadHandler extends Thread {
     private int bufSize;                    // packet buffer size
     private byte buffer[];                  // packet buffer
     
+    /**
+     * Creates a new ServerDownloadHandler to download from the client.
+     * @param filePath path where the file is going to be located
+     */
     public ServerDownloadHandler(String filePath) {
         this.bufSize = 8192;
         this.buffer = new byte[bufSize];
@@ -80,7 +84,10 @@ public class ServerDownloadHandler extends Thread {
         return;
     }
 
-    // get port created by OS
+    /**
+     * Returns current port.
+     * @return int with the port
+     */
     public int getPort() {
         return this.listenSocket.getLocalPort();
     }
