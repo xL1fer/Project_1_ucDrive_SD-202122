@@ -8,6 +8,6 @@ The project consists in the development of a file sharing system so that files c
 
 - The servers are design using a multithreaded model
 
-- Communications between client and server and done with sockets
+- Communications between client and server are done with sockets
 
 - Availability of the system is guaranteed using redundancy by implementing failover mechanisms
